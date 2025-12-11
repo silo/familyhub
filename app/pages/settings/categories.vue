@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Category } from '~/server/db/schema'
+import type { Category } from '~/types'
 
 definePageMeta({
   layout: 'settings',

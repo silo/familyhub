@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FamilyMember } from '~/server/db/schema'
+import type { FamilyMember } from '~/types'
 
 definePageMeta({
   layout: 'settings',

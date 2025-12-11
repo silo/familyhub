@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Chore, Category, FamilyMember } from '~/server/db/schema'
+import type { Chore, Category, FamilyMember } from '~/types'
 
 definePageMeta({
   layout: 'settings',
