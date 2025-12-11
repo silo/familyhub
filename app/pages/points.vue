@@ -237,8 +237,35 @@ function getRankClass(index: number) {
     <!-- Main content -->
     <main class="max-w-7xl mx-auto px-4 py-6">
       <!-- Loading state -->
-      <div v-if="status === 'pending'" class="flex justify-center py-16">
-        <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-gray-400" />
+      <div v-if="status === 'pending'" class="space-y-4">
+        <!-- Podium skeleton -->
+        <div class="flex justify-center items-end gap-4 mb-8 pt-8">
+          <div class="flex flex-col items-center">
+            <USkeleton class="w-16 h-16 rounded-full mb-2" />
+            <USkeleton class="w-6 h-6 mb-1" />
+            <USkeleton class="w-16 h-4 mb-1" />
+            <USkeleton class="w-12 h-5" />
+          </div>
+          <div class="flex flex-col items-center -mt-4">
+            <USkeleton class="w-20 h-20 rounded-full mb-2" />
+            <USkeleton class="w-8 h-8 mb-1" />
+            <USkeleton class="w-20 h-5 mb-1" />
+            <USkeleton class="w-16 h-6" />
+          </div>
+          <div class="flex flex-col items-center">
+            <USkeleton class="w-16 h-16 rounded-full mb-2" />
+            <USkeleton class="w-6 h-6 mb-1" />
+            <USkeleton class="w-16 h-4 mb-1" />
+            <USkeleton class="w-12 h-5" />
+          </div>
+        </div>
+        
+        <!-- List skeleton -->
+        <UCard>
+          <div class="divide-y divide-gray-200 dark:divide-gray-700">
+            <PointsLeaderboardSkeleton v-for="i in 5" :key="i" />
+          </div>
+        </UCard>
       </div>
 
       <!-- Empty state -->

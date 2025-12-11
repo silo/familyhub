@@ -25,7 +25,7 @@ const whoCompletedModal = ref(false)
 const choreToComplete = ref<(Chore & { category?: Category | null }) | null>(null)
 
 // Fetch data
-const { data: choresData, refresh: refreshChores } = await useFetch<{ 
+const { data: choresData, status: choresStatus, refresh: refreshChores } = await useFetch<{ 
   data: Array<Chore & { 
     category?: Category | null
     assignee?: FamilyMember | null
@@ -33,8 +33,9 @@ const { data: choresData, refresh: refreshChores } = await useFetch<{
   }> 
 }>('/api/chores')
 
-const { data: membersData } = await useFetch<{ data: FamilyMember[] }>('/api/family-members')
+const { data: membersData, status: membersStatus } = await useFetch<{ data: FamilyMember[] }>('/api/family-members')
 
+const isLoading = computed(() => choresStatus.value === 'pending' || membersStatus.value === 'pending')
 const chores = computed(() => choresData.value?.data || [])
 const familyMembers = computed(() => membersData.value?.data || [])
 
@@ -151,9 +152,29 @@ async function handleMemberSelected(memberId: number) {
 
     <!-- Main content -->
     <main class="max-w-7xl mx-auto px-4 py-6">
+      <!-- Loading state -->
+      <div v-if="isLoading">
+        <!-- Card view skeleton -->
+        <div 
+          v-if="viewMode === 'card'" 
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+        >
+          <ChoreCardSkeleton v-for="i in 8" :key="i" />
+        </div>
+        <!-- List view skeleton -->
+        <div 
+          v-else 
+          class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden"
+        >
+          <div class="divide-y divide-gray-200 dark:divide-gray-700">
+            <ChoreListItemSkeleton v-for="i in 6" :key="i" />
+          </div>
+        </div>
+      </div>
+
       <!-- Empty state -->
       <div 
-        v-if="filteredChores.length === 0" 
+        v-else-if="filteredChores.length === 0" 
         class="text-center py-16"
       >
         <UIcon 

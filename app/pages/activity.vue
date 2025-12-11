@@ -159,8 +159,15 @@ const groupedActivities = computed(() => {
     <!-- Main content -->
     <main class="max-w-7xl mx-auto px-4 py-6">
       <!-- Loading state -->
-      <div v-if="status === 'pending'" class="flex justify-center py-16">
-        <UIcon name="i-heroicons-arrow-path" class="w-8 h-8 animate-spin text-gray-400" />
+      <div v-if="status === 'pending'" class="space-y-6">
+        <UCard>
+          <template #header>
+            <USkeleton class="h-5 w-40" />
+          </template>
+          <div class="space-y-4">
+            <ActivitySkeleton v-for="i in 5" :key="i" />
+          </div>
+        </UCard>
       </div>
 
       <!-- Empty state -->
