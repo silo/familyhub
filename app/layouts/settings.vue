@@ -1,0 +1,189 @@
+<script setup lang="ts">
+// Settings layout with authentication and timeout
+const { isAuthenticated, isTimedOut, authType, verify, fetchAuthType, updateActivity, checkTimeout } = useSettingsAuth()
+
+const credential = ref('')
+const error = ref<string | null>(null)
+const loading = ref(false)
+
+// Fetch auth type on mount
+onMounted(async () => {
+  await fetchAuthType()
+  
+  // Set up activity listeners
+  if (import.meta.client) {
+    window.addEventListener('mousemove', updateActivity)
+    window.addEventListener('keydown', updateActivity)
+    window.addEventListener('click', updateActivity)
+    window.addEventListener('scroll', updateActivity)
+  }
+})
+
+onUnmounted(() => {
+  if (import.meta.client) {
+    window.removeEventListener('mousemove', updateActivity)
+    window.removeEventListener('keydown', updateActivity)
+    window.removeEventListener('click', updateActivity)
+    window.removeEventListener('scroll', updateActivity)
+  }
+})
+
+// Check timeout every 5 seconds
+const timeoutInterval = ref<ReturnType<typeof setInterval> | null>(null)
+onMounted(() => {
+  timeoutInterval.value = setInterval(checkTimeout, 5000)
+})
+onUnmounted(() => {
+  if (timeoutInterval.value) {
+    clearInterval(timeoutInterval.value)
+  }
+})
+
+async function handleLogin() {
+  if (!credential.value) {
+    error.value = authType.value === 'pin' ? 'Please enter your PIN' : 'Please enter your password'
+    return
+  }
+
+  loading.value = true
+  error.value = null
+
+  const result = await verify(credential.value)
+
+  if (!result.success) {
+    error.value = result.error || 'Verification failed'
+  }
+
+  credential.value = ''
+  loading.value = false
+}
+
+// Read version from runtime config
+const runtimeConfig = useRuntimeConfig()
+const version = ref('1.0.0')
+
+// Navigation items
+const navItems = [
+  { label: 'Family Members', to: '/settings/family-members', icon: 'i-lucide-users' },
+  { label: 'Categories', to: '/settings/categories', icon: 'i-lucide-folder' },
+  { label: 'Chores', to: '/settings/chores', icon: 'i-lucide-list-checks' },
+  { label: 'Points', to: '/settings/points', icon: 'i-lucide-coins' },
+  { label: 'Security', to: '/settings/security', icon: 'i-lucide-shield' },
+  { label: 'Backup', to: '/settings/backup', icon: 'i-lucide-download' },
+]
+</script>
+
+<template>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <!-- Auth Modal/Overlay -->
+    <div
+      v-if="!isAuthenticated || isTimedOut"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/80 backdrop-blur-sm"
+    >
+      <UCard class="w-full max-w-sm">
+        <template #header>
+          <div class="text-center">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+              Settings Access
+            </h2>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+              {{ isTimedOut && isAuthenticated ? 'Session timed out' : 'Enter credentials to continue' }}
+            </p>
+          </div>
+        </template>
+
+        <form class="space-y-4" @submit.prevent="handleLogin">
+          <UFormField
+            :label="authType === 'pin' ? '4-Digit PIN' : 'Password'"
+            name="credential"
+          >
+            <UInput
+              v-model="credential"
+              :type="authType === 'pin' ? 'password' : 'password'"
+              :placeholder="authType === 'pin' ? 'Enter PIN' : 'Enter password'"
+              :icon="authType === 'pin' ? 'i-lucide-key' : 'i-lucide-lock'"
+              :maxlength="authType === 'pin' ? 4 : undefined"
+              :inputmode="authType === 'pin' ? 'numeric' : 'text'"
+              autofocus
+            />
+          </UFormField>
+
+          <UAlert
+            v-if="error"
+            color="error"
+            icon="i-lucide-alert-circle"
+            :title="error"
+          />
+
+          <div class="flex gap-2">
+            <UButton
+              to="/dashboard"
+              color="neutral"
+              variant="outline"
+              class="flex-1"
+            >
+              Cancel
+            </UButton>
+            <UButton
+              type="submit"
+              class="flex-1"
+              :loading="loading"
+            >
+              Unlock
+            </UButton>
+          </div>
+        </form>
+      </UCard>
+    </div>
+
+    <!-- Settings Content (visible when authenticated) -->
+    <div v-show="isAuthenticated && !isTimedOut" class="flex min-h-screen">
+      <!-- Sidebar -->
+      <aside class="w-64 border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        <div class="flex h-full flex-col">
+          <!-- Header -->
+          <div class="border-b border-gray-200 p-4 dark:border-gray-800">
+            <div class="flex items-center gap-2">
+              <UButton
+                to="/dashboard"
+                color="neutral"
+                variant="ghost"
+                icon="i-lucide-arrow-left"
+                size="sm"
+              />
+              <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
+                Settings
+              </h1>
+            </div>
+          </div>
+
+          <!-- Navigation -->
+          <nav class="flex-1 space-y-1 p-4">
+            <NuxtLink
+              v-for="item in navItems"
+              :key="item.to"
+              :to="item.to"
+              class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+              active-class="bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400"
+            >
+              <UIcon :name="item.icon" class="size-5" />
+              {{ item.label }}
+            </NuxtLink>
+          </nav>
+
+          <!-- Footer -->
+          <div class="border-t border-gray-200 p-4 dark:border-gray-800">
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              FamilyHub v{{ version }}
+            </p>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="flex-1 overflow-auto">
+        <slot />
+      </main>
+    </div>
+  </div>
+</template>
