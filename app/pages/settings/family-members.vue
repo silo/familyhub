@@ -265,7 +265,11 @@ async function handleDelete() {
     </div>
 
     <!-- Create/Edit Modal -->
-    <UModal v-model:open="isModalOpen">
+    <UModal 
+      v-model:open="isModalOpen"
+      :title="editingMember ? 'Edit Family Member' : 'Add Family Member'"
+      :description="editingMember ? 'Update family member details' : 'Add a new family member'"
+    >
       <template #content>
         <UCard>
           <template #header>
@@ -361,7 +365,11 @@ async function handleDelete() {
     </UModal>
 
     <!-- Delete Confirmation Modal -->
-    <UModal v-model:open="isDeleteModalOpen">
+    <UModal 
+      v-model:open="isDeleteModalOpen"
+      title="Delete Family Member"
+      :description="`Permanently delete ${deletingMember?.name || 'this member'} and all their data`"
+    >
       <template #content>
         <UCard>
           <template #header>

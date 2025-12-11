@@ -339,7 +339,11 @@ function getChoreTypeBadgeColor(chore: Chore) {
     </div>
 
     <!-- Create/Edit Modal -->
-    <UModal v-model:open="isModalOpen">
+    <UModal 
+      v-model:open="isModalOpen"
+      :title="editingChore ? 'Edit Chore' : 'Add Chore'"
+      :description="editingChore ? 'Update chore details' : 'Create a new chore'"
+    >
       <template #content>
         <UCard class="max-h-[90vh] overflow-y-auto">
           <template #header>
@@ -513,7 +517,11 @@ function getChoreTypeBadgeColor(chore: Chore) {
     </UModal>
 
     <!-- Delete Confirmation Modal -->
-    <UModal v-model:open="isDeleteModalOpen">
+    <UModal 
+      v-model:open="isDeleteModalOpen"
+      title="Delete Chore"
+      :description="`Delete ${deletingChore?.title || 'this chore'}`"
+    >
       <template #content>
         <UCard>
           <template #header>

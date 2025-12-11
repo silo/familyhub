@@ -227,7 +227,11 @@ async function handleDelete() {
     </div>
 
     <!-- Create/Edit Modal -->
-    <UModal v-model:open="isModalOpen">
+    <UModal 
+      v-model:open="isModalOpen"
+      :title="editingCategory ? 'Edit Category' : 'Add Category'"
+      :description="editingCategory ? 'Update category details' : 'Create a new category'"
+    >
       <template #content>
         <UCard>
           <template #header>
@@ -326,7 +330,11 @@ async function handleDelete() {
     </UModal>
 
     <!-- Delete Confirmation Modal -->
-    <UModal v-model:open="isDeleteModalOpen">
+    <UModal 
+      v-model:open="isDeleteModalOpen"
+      title="Delete Category"
+      :description="`Delete ${deletingCategory?.name || 'this category'}`"
+    >
       <template #content>
         <UCard>
           <template #header>

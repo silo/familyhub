@@ -29,7 +29,12 @@ function getDiceBearUrl(seed: string) {
 </script>
 
 <template>
-  <UModal :open="open" @update:open="(val) => !val && emit('close')">
+  <UModal 
+    :open="open" 
+    title="Who completed this chore?"
+    :description="`Select who completed ${choreName}`"
+    @update:open="(val) => !val && emit('close')"
+  >
     <template #content>
       <UCard>
         <template #header>

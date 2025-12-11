@@ -62,9 +62,13 @@ const selectedMemberMoneyValue = computed(() => {
 })
 
 // Point history for selected member
+const historyMemberId = ref<number | null>(null)
 const { data: historyData, refresh: refreshHistory } = await useFetch<{ data: PointTransaction[] }>(
-  () => selectedMember.value ? `/api/points/history/${selectedMember.value.id}` : '/api/points/history/0',
-  { immediate: false }
+  () => historyMemberId.value ? `/api/points/history/${historyMemberId.value}` : '',
+  { 
+    immediate: false,
+    watch: false // Don't auto-watch, we'll manually refresh
+  }
 )
 
 const pointHistory = computed(() => historyData.value?.data || [])
@@ -72,7 +76,10 @@ const pointHistory = computed(() => historyData.value?.data || [])
 // Watch for member selection to fetch history
 watch(selectedMember, async (member) => {
   if (member) {
+    historyMemberId.value = member.id
     await refreshHistory()
+  } else {
+    historyMemberId.value = null
   }
 })
 
@@ -408,7 +415,12 @@ function getRankClass(index: number) {
     </nav>
 
     <!-- Member detail modal -->
-    <UModal :open="!!selectedMember && !showRedeemConfirm && !showAuthModal" @close="closeMemberDetail">
+    <UModal 
+      :open="!!selectedMember && !showRedeemConfirm && !showAuthModal" 
+      :title="selectedMember?.name || 'Member Details'"
+      :description="`View points and history for ${selectedMember?.name || 'member'}`"
+      @close="closeMemberDetail"
+    >
       <template #content>
         <UCard v-if="selectedMember">
           <template #header>
@@ -492,7 +504,12 @@ function getRankClass(index: number) {
     </UModal>
 
     <!-- Admin auth modal -->
-    <UModal :open="showAuthModal" @close="showAuthModal = false">
+    <UModal 
+      :open="showAuthModal" 
+      title="Admin Authentication Required"
+      description="Enter your credentials to redeem points"
+      @close="showAuthModal = false"
+    >
       <template #content>
         <UCard>
           <template #header>
@@ -537,7 +554,12 @@ function getRankClass(index: number) {
     </UModal>
 
     <!-- Redemption confirmation modal -->
-    <UModal :open="showRedeemConfirm" @close="showRedeemConfirm = false">
+    <UModal 
+      :open="showRedeemConfirm" 
+      title="Confirm Redemption"
+      :description="`Redeem all points for ${selectedMember?.name || 'member'}`"
+      @close="showRedeemConfirm = false"
+    >
       <template #content>
         <UCard v-if="selectedMember">
           <template #header>
