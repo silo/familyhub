@@ -4,6 +4,9 @@ definePageMeta({
   layout: 'default'
 })
 
+const toast = useToast()
+const { isAuthenticated, verify, fetchAuthType, authType } = useSettingsAuth()
+
 interface LeaderboardMember {
   id: number
   name: string
@@ -24,13 +27,39 @@ interface PointTransaction {
   createdAt: string
 }
 
+// Fetch settings for currency info
+const { data: settingsData } = await useFetch<{ data: { currency: string; pointValue: string } }>('/api/settings')
+const currency = computed(() => settingsData.value?.data?.currency || 'USD')
+const pointValue = computed(() => parseFloat(settingsData.value?.data?.pointValue || '1.00'))
+
 // Fetch leaderboard data
-const { data: leaderboardData, status } = await useFetch<{ data: LeaderboardMember[] }>('/api/points/leaderboard')
+const { data: leaderboardData, status, refresh: refreshLeaderboard } = await useFetch<{ data: LeaderboardMember[] }>('/api/points/leaderboard')
 
 const leaderboard = computed(() => leaderboardData.value?.data || [])
 
 // Selected member for history view
 const selectedMember = ref<LeaderboardMember | null>(null)
+
+// Auth modal state for redemption
+const showAuthModal = ref(false)
+const authCredential = ref('')
+const authError = ref('')
+const authLoading = ref(false)
+
+// Redemption confirmation modal
+const showRedeemConfirm = ref(false)
+const redeemLoading = ref(false)
+
+// Fetch auth type on mount
+onMounted(() => {
+  fetchAuthType()
+})
+
+// Computed money value for selected member
+const selectedMemberMoneyValue = computed(() => {
+  if (!selectedMember.value) return '0.00'
+  return (selectedMember.value.totalPoints * pointValue.value).toFixed(2)
+})
 
 // Point history for selected member
 const { data: historyData, refresh: refreshHistory } = await useFetch<{ data: PointTransaction[] }>(
@@ -53,6 +82,95 @@ function selectMember(member: LeaderboardMember) {
 
 function closeMemberDetail() {
   selectedMember.value = null
+  showRedeemConfirm.value = false
+}
+
+// Handle redeem button click
+function handleRedeemClick() {
+  if (isAuthenticated.value) {
+    // Already authenticated, show confirmation
+    showRedeemConfirm.value = true
+  } else {
+    // Need to authenticate first
+    showAuthModal.value = true
+    authCredential.value = ''
+    authError.value = ''
+  }
+}
+
+// Handle auth submission
+async function handleAuthSubmit() {
+  if (!authCredential.value) return
+  
+  authLoading.value = true
+  authError.value = ''
+  
+  const result = await verify(authCredential.value)
+  
+  authLoading.value = false
+  
+  if (result.success) {
+    showAuthModal.value = false
+    authCredential.value = ''
+    // Now show confirmation modal
+    showRedeemConfirm.value = true
+  } else {
+    authError.value = result.error || 'Invalid credentials'
+  }
+}
+
+// Handle redemption confirmation
+async function confirmRedeem() {
+  if (!selectedMember.value) return
+  
+  redeemLoading.value = true
+  
+  try {
+    const response = await $fetch<{ data?: any; error?: string }>('/api/points/redeem', {
+      method: 'POST',
+      body: { familyMemberId: selectedMember.value.id }
+    })
+    
+    if (response.error) {
+      toast.add({
+        title: 'Error',
+        description: response.error,
+        icon: 'i-heroicons-exclamation-circle',
+        color: 'error',
+        duration: 3000
+      })
+    } else {
+      toast.add({
+        title: 'Points Redeemed!',
+        description: `${response.data.memberName} redeemed ${response.data.pointsRedeemed} points for ${response.data.moneyValue}`,
+        icon: 'i-heroicons-gift',
+        color: 'success',
+        duration: 5000
+      })
+      
+      // Refresh data
+      await refreshLeaderboard()
+      await refreshHistory()
+      
+      // Update selected member with new balance
+      const updatedMember = leaderboard.value.find(m => m.id === selectedMember.value?.id)
+      if (updatedMember) {
+        selectedMember.value = updatedMember
+      }
+      
+      showRedeemConfirm.value = false
+    }
+  } catch (error: any) {
+    toast.add({
+      title: 'Error',
+      description: error.data?.error || 'Failed to redeem points',
+      icon: 'i-heroicons-exclamation-circle',
+      color: 'error',
+      duration: 3000
+    })
+  } finally {
+    redeemLoading.value = false
+  }
 }
 
 function formatDate(dateString: string) {
@@ -290,7 +408,7 @@ function getRankClass(index: number) {
     </nav>
 
     <!-- Member detail modal -->
-    <UModal :open="!!selectedMember" @close="closeMemberDetail">
+    <UModal :open="!!selectedMember && !showRedeemConfirm && !showAuthModal" @close="closeMemberDetail">
       <template #content>
         <UCard v-if="selectedMember">
           <template #header>
@@ -309,6 +427,9 @@ function getRankClass(index: number) {
                 <h3 class="text-xl font-semibold">{{ selectedMember.name }}</h3>
                 <div class="text-2xl font-bold text-primary-600 dark:text-primary-400">
                   {{ selectedMember.totalPoints }} points
+                </div>
+                <div class="text-sm text-gray-500">
+                  ≈ {{ currency }} {{ selectedMemberMoneyValue }}
                 </div>
               </div>
             </div>
@@ -347,13 +468,123 @@ function getRankClass(index: number) {
           </div>
 
           <template #footer>
-            <div class="flex justify-end">
+            <div class="flex justify-between gap-3">
+              <UButton
+                v-if="selectedMember.totalPoints > 0"
+                color="primary"
+                icon="i-heroicons-gift"
+                @click="handleRedeemClick"
+              >
+                Redeem All Points
+              </UButton>
+              <div class="flex-1" />
               <UButton
                 variant="ghost"
                 color="neutral"
                 @click="closeMemberDetail"
               >
                 Close
+              </UButton>
+            </div>
+          </template>
+        </UCard>
+      </template>
+    </UModal>
+
+    <!-- Admin auth modal -->
+    <UModal :open="showAuthModal" @close="showAuthModal = false">
+      <template #content>
+        <UCard>
+          <template #header>
+            <h3 class="text-lg font-semibold">Admin Authentication Required</h3>
+            <p class="text-sm text-gray-500">Enter your {{ authType === 'pin' ? 'PIN' : 'password' }} to redeem points</p>
+          </template>
+
+          <form @submit.prevent="handleAuthSubmit">
+            <UFormField :label="authType === 'pin' ? 'PIN' : 'Password'" :error="authError">
+              <UInput
+                v-model="authCredential"
+                :type="authType === 'pin' ? 'tel' : 'password'"
+                :placeholder="authType === 'pin' ? 'Enter 4-digit PIN' : 'Enter password'"
+                :maxlength="authType === 'pin' ? 4 : undefined"
+                autofocus
+                size="lg"
+              />
+            </UFormField>
+          </form>
+
+          <template #footer>
+            <div class="flex justify-end gap-3">
+              <UButton
+                variant="ghost"
+                color="neutral"
+                @click="showAuthModal = false"
+              >
+                Cancel
+              </UButton>
+              <UButton
+                color="primary"
+                :loading="authLoading"
+                :disabled="!authCredential || (authType === 'pin' && authCredential.length !== 4)"
+                @click="handleAuthSubmit"
+              >
+                Verify
+              </UButton>
+            </div>
+          </template>
+        </UCard>
+      </template>
+    </UModal>
+
+    <!-- Redemption confirmation modal -->
+    <UModal :open="showRedeemConfirm" @close="showRedeemConfirm = false">
+      <template #content>
+        <UCard v-if="selectedMember">
+          <template #header>
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                <UIcon name="i-heroicons-gift" class="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold">Confirm Redemption</h3>
+                <p class="text-sm text-gray-500">This will redeem all points for {{ selectedMember.name }}</p>
+              </div>
+            </div>
+          </template>
+
+          <div class="space-y-4">
+            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-center">
+              <div class="text-3xl font-bold text-primary-600 dark:text-primary-400">
+                {{ selectedMember.totalPoints }} points
+              </div>
+              <div class="text-xl font-semibold text-gray-600 dark:text-gray-300 mt-1">
+                = {{ currency }} {{ selectedMemberMoneyValue }}
+              </div>
+            </div>
+
+            <div class="text-sm text-gray-500 text-center">
+              <UIcon name="i-heroicons-exclamation-triangle" class="w-4 h-4 inline mr-1 text-amber-500" />
+              All points will be redeemed. Please transfer the money manually.
+            </div>
+          </div>
+
+          <template #footer>
+            <div class="flex justify-end gap-3">
+              <UButton
+                variant="ghost"
+                color="neutral"
+                :disabled="redeemLoading"
+                @click="showRedeemConfirm = false"
+              >
+                Cancel
+              </UButton>
+              <UButton
+                color="primary"
+                icon="i-heroicons-gift"
+                :loading="redeemLoading"
+                @click="confirmRedeem"
+              >
+                Confirm Redemption
               </UButton>
             </div>
           </template>
