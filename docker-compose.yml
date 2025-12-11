@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: familyhub-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: familyhub
+      POSTGRES_PASSWORD: familyhub_password
+      POSTGRES_DB: familyhub
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U familyhub -d familyhub"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: familyhub-app
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://familyhub:familyhub_password@db:5432/familyhub
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    volumes:
+      - uploads:/app/public/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  uploads:

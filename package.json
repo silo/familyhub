@@ -1,0 +1,26 @@
+{
+  "name": "familyhub",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxt/ui": "^4.2.1",
+    "bcrypt": "^6.0.0",
+    "drizzle-orm": "^0.45.1",
+    "nuxt": "^4.2.2",
+    "postgres": "^3.4.7",
+    "vue": "^3.5.25",
+    "vue-router": "^4.6.3",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "drizzle-kit": "^0.31.8"
+  }
+}
