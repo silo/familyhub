@@ -3,17 +3,18 @@ import { db } from '../../db'
 
 export default defineEventHandler(async () => {
   try {
-    // Check if admin and at least one family member exist
-    const adminRecord = await db.query.admin.findFirst()
-    const familyMemberRecord = await db.query.familyMembers.findFirst()
+    // Check if admin family member exists (with isAdmin = true)
+    const adminMember = await db.query.familyMembers.findFirst({
+      where: (fm, { eq }) => eq(fm.isAdmin, true),
+    })
 
-    const isSetupComplete = !!(adminRecord && familyMemberRecord)
+    const isSetupComplete = !!adminMember
 
     return {
       data: {
         isSetupComplete,
-        hasAdmin: !!adminRecord,
-        hasFamilyMember: !!familyMemberRecord,
+        hasAdmin: !!adminMember,
+        hasFamilyMember: !!adminMember,
       },
     }
   } catch (error) {

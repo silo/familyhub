@@ -1,28 +1,14 @@
 // server/api/setup/complete.post.ts
 import { z } from 'zod'
 import bcrypt from 'bcrypt'
-import { db, admin, settings, familyMembers, PASTEL_COLORS } from '../../db'
+import { db } from '../../db'
+import { settings, familyMembers, PASTEL_COLORS } from '../../db/schema'
 
 const setupSchema = z.object({
   adminName: z.string().min(1).max(100),
-  authType: z.enum(['password', 'pin']),
-  password: z.string().optional(),
-  pin: z.string().optional(),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
   currency: z.string().length(3).default('USD'),
   pointValue: z.coerce.number().positive().default(1),
-}).refine((data) => {
-  // Validate password if password auth
-  if (data.authType === 'password') {
-    return data.password && data.password.length >= 6
-  }
-  // Validate PIN if pin auth
-  if (data.authType === 'pin') {
-    return data.pin && /^\d{4}$/.test(data.pin)
-  }
-  return false
-}, {
-  message: 'Password must be at least 6 characters, or PIN must be exactly 4 digits',
-  path: ['password'],
 })
 
 export default defineEventHandler(async (event) => {
@@ -36,34 +22,22 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const { adminName, authType, password, pin, currency, pointValue } = result.data
+  const { adminName, password, currency, pointValue } = result.data
 
   try {
-    // Check if already set up
-    const existingAdmin = await db.query.admin.findFirst()
+    // Check if already set up (by checking if any family member with isAdmin exists)
+    const existingAdmin = await db.query.familyMembers.findFirst({
+      where: (fm, { eq }) => eq(fm.isAdmin, true),
+    })
     if (existingAdmin) {
       return {
         error: 'Setup has already been completed',
       }
     }
 
-    // Hash the password or PIN
+    // Hash the password
     const SALT_ROUNDS = 12
-    let passwordHash: string | null = null
-    let pinHash: string | null = null
-
-    if (authType === 'password' && password) {
-      passwordHash = await bcrypt.hash(password, SALT_ROUNDS)
-    } else if (authType === 'pin' && pin) {
-      pinHash = await bcrypt.hash(pin, SALT_ROUNDS)
-    }
-
-    // Create admin record
-    await db.insert(admin).values({
-      authType,
-      passwordHash,
-      pinHash,
-    })
+    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS)
 
     // Create settings record
     await db.insert(settings).values({
@@ -71,7 +45,7 @@ export default defineEventHandler(async (event) => {
       pointValue: pointValue.toString(),
     })
 
-    // Create admin family member with random color
+    // Create admin family member with random color and password
     const randomColor = PASTEL_COLORS[Math.floor(Math.random() * PASTEL_COLORS.length)]
     const avatarSeed = `${adminName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
 
@@ -81,6 +55,7 @@ export default defineEventHandler(async (event) => {
       avatarValue: avatarSeed,
       color: randomColor,
       isAdmin: true,
+      passwordHash,
     })
 
     return {

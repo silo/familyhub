@@ -5,7 +5,7 @@ definePageMeta({
 })
 
 const toast = useToast()
-const { isAuthenticated, verify, fetchAuthType, authType } = useSettingsAuth()
+const { isAuthenticated, verify } = useSettingsAuth()
 
 interface LeaderboardMember {
   id: number
@@ -50,10 +50,7 @@ const authLoading = ref(false)
 const showRedeemConfirm = ref(false)
 const redeemLoading = ref(false)
 
-// Fetch auth type on mount
-onMounted(() => {
-  fetchAuthType()
-})
+
 
 // Computed money value for selected member
 const selectedMemberMoneyValue = computed(() => {
@@ -541,16 +538,15 @@ function getRankClass(index: number) {
         <UCard>
           <template #header>
             <h3 class="text-lg font-semibold">Admin Authentication Required</h3>
-            <p class="text-sm text-gray-500">Enter your {{ authType === 'pin' ? 'PIN' : 'password' }} to redeem points</p>
+            <p class="text-sm text-gray-500">Enter your password to redeem points</p>
           </template>
 
           <form @submit.prevent="handleAuthSubmit">
-            <UFormField :label="authType === 'pin' ? 'PIN' : 'Password'" :error="authError">
+            <UFormField label="Password" :error="authError">
               <UInput
                 v-model="authCredential"
-                :type="authType === 'pin' ? 'tel' : 'password'"
-                :placeholder="authType === 'pin' ? 'Enter 4-digit PIN' : 'Enter password'"
-                :maxlength="authType === 'pin' ? 4 : undefined"
+                type="password"
+                placeholder="Enter password"
                 autofocus
                 size="lg"
               />
@@ -569,7 +565,7 @@ function getRankClass(index: number) {
               <UButton
                 color="primary"
                 :loading="authLoading"
-                :disabled="!authCredential || (authType === 'pin' && authCredential.length !== 4)"
+                :disabled="!authCredential"
                 @click="handleAuthSubmit"
               >
                 Verify

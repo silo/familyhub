@@ -9,22 +9,9 @@ definePageMeta({
 // Form schema
 const schema = z.object({
   adminName: z.string().min(1, 'Name is required').max(100, 'Name is too long'),
-  authType: z.enum(['password', 'pin']),
-  password: z.string().optional(),
-  pin: z.string().optional(),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
   currency: z.string().default('USD'),
   pointValue: z.coerce.number().positive('Point value must be positive').default(1),
-}).refine((data) => {
-  if (data.authType === 'password') {
-    return data.password && data.password.length >= 6
-  }
-  if (data.authType === 'pin') {
-    return data.pin && /^\d{4}$/.test(data.pin)
-  }
-  return false
-}, {
-  message: 'Password must be at least 6 characters, or PIN must be exactly 4 digits',
-  path: ['password'],
 })
 
 type Schema = z.output<typeof schema>
@@ -32,9 +19,7 @@ type Schema = z.output<typeof schema>
 // Form state
 const state = reactive<Partial<Schema>>({
   adminName: '',
-  authType: 'password',
   password: '',
-  pin: '',
   currency: 'USD',
   pointValue: 1,
 })
@@ -50,12 +35,6 @@ const currencies = [
   { label: 'DKK (kr)', value: 'DKK' },
   { label: 'SEK (kr)', value: 'SEK' },
   { label: 'NOK (kr)', value: 'NOK' },
-]
-
-// Auth type options
-const authTypes = [
-  { label: 'Password', value: 'password' },
-  { label: '4-Digit PIN', value: 'pin' },
 ]
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
@@ -111,17 +90,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         />
       </UFormField>
 
-      <!-- Auth Type Selection -->
-      <UFormField label="Security Method" name="authType">
-        <URadioGroup
-          v-model="state.authType"
-          :items="authTypes"
-        />
-      </UFormField>
-
-      <!-- Password (if password auth) -->
+      <!-- Password -->
       <UFormField
-        v-if="state.authType === 'password'"
         label="Password"
         name="password"
         required
@@ -131,23 +101,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           type="password"
           placeholder="Enter password (min 6 characters)"
           icon="i-lucide-lock"
-        />
-      </UFormField>
-
-      <!-- PIN (if PIN auth) -->
-      <UFormField
-        v-if="state.authType === 'pin'"
-        label="4-Digit PIN"
-        name="pin"
-        required
-      >
-        <UInput
-          v-model="state.pin"
-          type="password"
-          placeholder="Enter 4-digit PIN"
-          icon="i-lucide-key"
-          maxlength="4"
-          inputmode="numeric"
         />
       </UFormField>
 

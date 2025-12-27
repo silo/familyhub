@@ -3,45 +3,23 @@ definePageMeta({
   layout: 'settings',
 })
 
-const { authType, fetchAuthType } = useSettingsAuth()
-
 // Form state
 const form = reactive({
-  currentCredential: '',
-  newAuthType: 'password' as 'password' | 'pin',
-  newCredential: '',
-  confirmCredential: '',
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: '',
 })
 
 const loading = ref(false)
 const success = ref(false)
 const error = ref<string | null>(null)
 
-// Initialize form with current auth type
-onMounted(async () => {
-  await fetchAuthType()
-  form.newAuthType = authType.value
-})
-
-// Auth type options
-const authTypeOptions = [
-  { label: 'Password', value: 'password' },
-  { label: '4-Digit PIN', value: 'pin' },
-]
-
 // Validation
 const isValid = computed(() => {
-  if (!form.currentCredential) return false
-  if (!form.newCredential) return false
-  if (form.newCredential !== form.confirmCredential) return false
-
-  if (form.newAuthType === 'password') {
-    return form.newCredential.length >= 6
-  }
-  if (form.newAuthType === 'pin') {
-    return /^\d{4}$/.test(form.newCredential)
-  }
-  return false
+  if (!form.currentPassword) return false
+  if (!form.newPassword) return false
+  if (form.newPassword !== form.confirmPassword) return false
+  return form.newPassword.length >= 6
 })
 
 async function handleSave() {
@@ -58,9 +36,8 @@ async function handleSave() {
     const response = await $fetch('/api/settings/security', {
       method: 'PUT',
       body: {
-        currentCredential: form.currentCredential,
-        newAuthType: form.newAuthType,
-        newCredential: form.newCredential,
+        currentPassword: form.currentPassword,
+        newPassword: form.newPassword,
       },
     })
 
@@ -72,19 +49,16 @@ async function handleSave() {
     success.value = true
 
     // Reset form
-    form.currentCredential = ''
-    form.newCredential = ''
-    form.confirmCredential = ''
-
-    // Refresh auth type
-    await fetchAuthType()
+    form.currentPassword = ''
+    form.newPassword = ''
+    form.confirmPassword = ''
 
     // Clear success after 3 seconds
     setTimeout(() => {
       success.value = false
     }, 3000)
   } catch (e) {
-    error.value = 'Failed to update security settings'
+    error.value = 'Failed to update password'
   } finally {
     loading.value = false
   }
@@ -98,87 +72,63 @@ async function handleSave() {
         Security Settings
       </h2>
       <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-        Change your password or switch to PIN authentication
+        Change your admin password
       </p>
     </div>
 
     <UCard class="max-w-lg">
       <form class="space-y-6" @submit.prevent="handleSave">
-        <!-- Current Auth Info -->
-        <UAlert
-          color="info"
-          icon="i-lucide-info"
-        >
-          <template #title>
-            Currently using: <strong>{{ authType === 'pin' ? '4-Digit PIN' : 'Password' }}</strong>
-          </template>
-        </UAlert>
-
-        <!-- Current Credential -->
+        <!-- Current Password -->
         <UFormField
-          :label="authType === 'pin' ? 'Current PIN' : 'Current Password'"
-          name="currentCredential"
+          label="Current Password"
+          name="currentPassword"
           required
         >
           <UInput
-            v-model="form.currentCredential"
+            v-model="form.currentPassword"
             type="password"
-            :placeholder="authType === 'pin' ? 'Enter current PIN' : 'Enter current password'"
-            :icon="authType === 'pin' ? 'i-lucide-key' : 'i-lucide-lock'"
-            :maxlength="authType === 'pin' ? 4 : undefined"
-            :inputmode="authType === 'pin' ? 'numeric' : 'text'"
+            placeholder="Enter current password"
+            icon="i-lucide-lock"
           />
         </UFormField>
 
-        <USeparator label="New Authentication" />
+        <USeparator label="New Password" />
 
-        <!-- New Auth Type -->
-        <UFormField label="Authentication Method" name="newAuthType">
-          <URadioGroup
-            v-model="form.newAuthType"
-            :items="authTypeOptions"
-          />
-        </UFormField>
-
-        <!-- New Credential -->
+        <!-- New Password -->
         <UFormField
-          :label="form.newAuthType === 'pin' ? 'New PIN' : 'New Password'"
-          name="newCredential"
+          label="New Password"
+          name="newPassword"
           required
-          :hint="form.newAuthType === 'pin' ? 'Must be exactly 4 digits' : 'Must be at least 6 characters'"
+          hint="Must be at least 6 characters"
         >
           <UInput
-            v-model="form.newCredential"
+            v-model="form.newPassword"
             type="password"
-            :placeholder="form.newAuthType === 'pin' ? 'Enter new PIN' : 'Enter new password'"
-            :icon="form.newAuthType === 'pin' ? 'i-lucide-key' : 'i-lucide-lock'"
-            :maxlength="form.newAuthType === 'pin' ? 4 : undefined"
-            :inputmode="form.newAuthType === 'pin' ? 'numeric' : 'text'"
+            placeholder="Enter new password"
+            icon="i-lucide-lock"
           />
         </UFormField>
 
-        <!-- Confirm Credential -->
+        <!-- Confirm Password -->
         <UFormField
-          :label="form.newAuthType === 'pin' ? 'Confirm New PIN' : 'Confirm New Password'"
-          name="confirmCredential"
+          label="Confirm New Password"
+          name="confirmPassword"
           required
         >
           <UInput
-            v-model="form.confirmCredential"
+            v-model="form.confirmPassword"
             type="password"
-            :placeholder="form.newAuthType === 'pin' ? 'Confirm new PIN' : 'Confirm new password'"
-            :icon="form.newAuthType === 'pin' ? 'i-lucide-key' : 'i-lucide-lock'"
-            :maxlength="form.newAuthType === 'pin' ? 4 : undefined"
-            :inputmode="form.newAuthType === 'pin' ? 'numeric' : 'text'"
+            placeholder="Confirm new password"
+            icon="i-lucide-lock"
           />
         </UFormField>
 
         <!-- Mismatch Warning -->
         <UAlert
-          v-if="form.newCredential && form.confirmCredential && form.newCredential !== form.confirmCredential"
+          v-if="form.newPassword && form.confirmPassword && form.newPassword !== form.confirmPassword"
           color="warning"
           icon="i-lucide-alert-triangle"
-          title="Credentials don't match"
+          title="Passwords don't match"
         />
 
         <!-- Messages -->
@@ -186,7 +136,7 @@ async function handleSave() {
           v-if="success"
           color="success"
           icon="i-lucide-check-circle"
-          title="Security settings updated successfully"
+          title="Password updated successfully"
         />
 
         <UAlert
@@ -202,7 +152,7 @@ async function handleSave() {
           :loading="loading"
           :disabled="!isValid"
         >
-          Update Security Settings
+          Update Password
         </UButton>
       </form>
     </UCard>

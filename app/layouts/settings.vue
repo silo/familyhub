@@ -1,16 +1,13 @@
 <script setup lang="ts">
 // Settings layout with authentication and timeout
-const { isAuthenticated, isTimedOut, authType, verify, fetchAuthType, updateActivity, checkTimeout } = useSettingsAuth()
+const { isAuthenticated, isTimedOut, verify, updateActivity, checkTimeout } = useSettingsAuth()
 
-const credential = ref('')
+const password = ref('')
 const error = ref<string | null>(null)
 const loading = ref(false)
 
-// Fetch auth type on mount
+// Set up activity listeners
 onMounted(async () => {
-  await fetchAuthType()
-  
-  // Set up activity listeners
   if (import.meta.client) {
     window.addEventListener('mousemove', updateActivity)
     window.addEventListener('keydown', updateActivity)
@@ -40,21 +37,21 @@ onUnmounted(() => {
 })
 
 async function handleLogin() {
-  if (!credential.value) {
-    error.value = authType.value === 'pin' ? 'Please enter your PIN' : 'Please enter your password'
+  if (!password.value) {
+    error.value = 'Please enter your password'
     return
   }
 
   loading.value = true
   error.value = null
 
-  const result = await verify(credential.value)
+  const result = await verify(password.value)
 
   if (!result.success) {
     error.value = result.error || 'Verification failed'
   }
 
-  credential.value = ''
+  password.value = ''
   loading.value = false
 }
 
@@ -87,23 +84,21 @@ const navItems = [
               Settings Access
             </h2>
             <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-              {{ isTimedOut && isAuthenticated ? 'Session timed out' : 'Enter credentials to continue' }}
+              {{ isTimedOut && isAuthenticated ? 'Session timed out' : 'Enter password to continue' }}
             </p>
           </div>
         </template>
 
         <form class="space-y-4" @submit.prevent="handleLogin">
           <UFormField
-            :label="authType === 'pin' ? '4-Digit PIN' : 'Password'"
-            name="credential"
+            label="Password"
+            name="password"
           >
             <UInput
-              v-model="credential"
-              :type="authType === 'pin' ? 'password' : 'password'"
-              :placeholder="authType === 'pin' ? 'Enter PIN' : 'Enter password'"
-              :icon="authType === 'pin' ? 'i-lucide-key' : 'i-lucide-lock'"
-              :maxlength="authType === 'pin' ? 4 : undefined"
-              :inputmode="authType === 'pin' ? 'numeric' : 'text'"
+              v-model="password"
+              type="password"
+              placeholder="Enter password"
+              icon="i-lucide-lock"
               autofocus
             />
           </UFormField>

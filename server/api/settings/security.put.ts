@@ -2,23 +2,12 @@
 import { z } from 'zod'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcrypt'
-import { db, admin } from '../../db'
+import { db } from '../../db'
+import { familyMembers } from '../../db/schema'
 
 const updateSchema = z.object({
-  currentCredential: z.string().min(1, 'Current credential is required'),
-  newAuthType: z.enum(['password', 'pin']),
-  newCredential: z.string().min(1, 'New credential is required'),
-}).refine((data) => {
-  if (data.newAuthType === 'password') {
-    return data.newCredential.length >= 6
-  }
-  if (data.newAuthType === 'pin') {
-    return /^\d{4}$/.test(data.newCredential)
-  }
-  return false
-}, {
-  message: 'Password must be at least 6 characters, or PIN must be exactly 4 digits',
-  path: ['newCredential'],
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(6, 'New password must be at least 6 characters'),
 })
 
 export default defineEventHandler(async (event) => {
@@ -31,60 +20,48 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const { currentCredential, newAuthType, newCredential } = result.data
+  const { currentPassword, newPassword } = result.data
 
   try {
-    // Get current admin
-    const adminRecord = await db.query.admin.findFirst()
+    // Get admin family member
+    const adminMember = await db.query.familyMembers.findFirst({
+      where: eq(familyMembers.isAdmin, true),
+    })
 
-    if (!adminRecord) {
+    if (!adminMember || !adminMember.passwordHash) {
       return { error: 'Admin not found' }
     }
 
-    // Verify current credential
-    let isValid = false
-    if (adminRecord.authType === 'password' && adminRecord.passwordHash) {
-      isValid = await bcrypt.compare(currentCredential, adminRecord.passwordHash)
-    } else if (adminRecord.authType === 'pin' && adminRecord.pinHash) {
-      isValid = await bcrypt.compare(currentCredential, adminRecord.pinHash)
-    }
+    // Verify current password
+    const isValid = await bcrypt.compare(currentPassword, adminMember.passwordHash)
 
     if (!isValid) {
       return {
-        error: adminRecord.authType === 'pin' ? 'Invalid current PIN' : 'Invalid current password',
+        error: 'Invalid current password',
       }
     }
 
-    // Hash new credential
+    // Hash new password
     const SALT_ROUNDS = 12
-    let passwordHash: string | null = null
-    let pinHash: string | null = null
+    const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS)
 
-    if (newAuthType === 'password') {
-      passwordHash = await bcrypt.hash(newCredential, SALT_ROUNDS)
-    } else {
-      pinHash = await bcrypt.hash(newCredential, SALT_ROUNDS)
-    }
-
-    // Update admin
+    // Update admin family member password
     await db
-      .update(admin)
+      .update(familyMembers)
       .set({
-        authType: newAuthType,
         passwordHash,
-        pinHash,
         updatedAt: new Date(),
       })
-      .where(eq(admin.id, adminRecord.id))
+      .where(eq(familyMembers.id, adminMember.id))
 
     return {
       data: {
         success: true,
-        authType: newAuthType,
+        message: 'Password updated successfully',
       },
     }
   } catch (error) {
-    console.error('Failed to update security settings:', error)
-    return { error: 'Failed to update security settings' }
+    console.error('Security update failed:', error)
+    return { error: 'Failed to update password' }
   }
 })

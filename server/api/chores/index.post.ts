@@ -1,6 +1,8 @@
 // server/api/chores/index.post.ts
 import { z } from 'zod'
-import { db, chores } from '../../db'
+import crypto from 'crypto'
+import { db } from '../../db'
+import { chores } from '../../db/schema'
 
 const recurringConfigSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('daily') }),
@@ -39,6 +41,9 @@ export default defineEventHandler(async (event) => {
   const data = result.data
 
   try {
+    // Generate unique QR token for the chore
+    const qrToken = crypto.randomUUID()
+
     const [newChore] = await db
       .insert(chores)
       .values({
@@ -55,6 +60,7 @@ export default defineEventHandler(async (event) => {
         endDate: data.endDate || null,
         cooldownType: data.isPermanent ? (data.cooldownType || 'unlimited') : null,
         cooldownHours: data.cooldownType === 'hours' ? data.cooldownHours : null,
+        qrToken,
       })
       .returning()
 

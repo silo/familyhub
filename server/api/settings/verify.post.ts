@@ -2,9 +2,11 @@
 import { z } from 'zod'
 import bcrypt from 'bcrypt'
 import { db } from '../../db'
+import { familyMembers } from '../../db/schema'
+import { eq } from 'drizzle-orm'
 
 const verifySchema = z.object({
-  credential: z.string().min(1, 'Credential is required'),
+  password: z.string().min(1, 'Password is required'),
 })
 
 export default defineEventHandler(async (event) => {
@@ -17,35 +19,32 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const { credential } = result.data
+  const { password } = result.data
 
   try {
-    const adminRecord = await db.query.admin.findFirst()
+    // Find admin family member
+    const adminMember = await db.query.familyMembers.findFirst({
+      where: eq(familyMembers.isAdmin, true),
+    })
 
-    if (!adminRecord) {
+    if (!adminMember || !adminMember.passwordHash) {
       return {
         error: 'Admin not configured',
       }
     }
 
-    let isValid = false
-
-    if (adminRecord.authType === 'password' && adminRecord.passwordHash) {
-      isValid = await bcrypt.compare(credential, adminRecord.passwordHash)
-    } else if (adminRecord.authType === 'pin' && adminRecord.pinHash) {
-      isValid = await bcrypt.compare(credential, adminRecord.pinHash)
-    }
+    // Verify password
+    const isValid = await bcrypt.compare(password, adminMember.passwordHash)
 
     if (!isValid) {
       return {
-        error: adminRecord.authType === 'pin' ? 'Invalid PIN' : 'Invalid password',
+        error: 'Invalid password',
       }
     }
 
     return {
       data: {
         success: true,
-        authType: adminRecord.authType,
       },
     }
   } catch (error) {

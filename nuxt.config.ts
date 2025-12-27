@@ -7,8 +7,23 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  // Disable SSR for Capacitor mobile app compatibility
+  ssr: false,
+
   runtimeConfig: {
     databaseUrl: process.env.DATABASE_URL,
+    public: {
+      // API base URL for mobile app (override in production)
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || '',
+    },
+  },
+
+  app: {
+    head: {
+      meta: [
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
+      ],
+    },
   },
 
   future: {

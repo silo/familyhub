@@ -14,19 +14,29 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@capacitor-mlkit/barcode-scanning": "^8.0.0",
+    "@capacitor/cli": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/haptics": "^8.0.0",
+    "@capacitor/preferences": "^8.0.0",
+    "@capgo/capacitor-nfc": "^8.0.5",
     "@nuxt/ui": "^4.2.1",
     "bcrypt": "^6.0.0",
     "drizzle-orm": "^0.45.1",
     "nuxt": "^4.2.2",
     "postgres": "^3.4.7",
+    "qrcode": "^1.5.4",
     "vue": "^3.5.25",
     "vue-router": "^4.6.3",
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/ios": "^8.0.0",
     "@iconify-json/heroicons": "^1.2.3",
     "@iconify-json/lucide": "^1.2.80",
     "@types/bcrypt": "^6.0.0",
+    "@types/qrcode": "^1.5.6",
     "drizzle-kit": "^0.31.8",
     "tailwindcss": "^4.1.17"
   }

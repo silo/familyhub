@@ -16,18 +16,6 @@ import {
 import { relations } from 'drizzle-orm'
 
 // ============================================================================
-// Admin Table
-// ============================================================================
-export const admin = pgTable('admin', {
-  id: serial('id').primaryKey(),
-  passwordHash: varchar('password_hash', { length: 255 }),
-  pinHash: varchar('pin_hash', { length: 255 }),
-  authType: varchar('auth_type', { length: 20 }).notNull().default('password'),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-})
-
-// ============================================================================
 // Settings Table
 // ============================================================================
 export const settings = pgTable('settings', {
@@ -48,6 +36,7 @@ export const familyMembers = pgTable('family_members', {
   avatarValue: varchar('avatar_value', { length: 500 }).notNull(),
   color: varchar('color', { length: 7 }).notNull(),
   isAdmin: boolean('is_admin').notNull().default(false),
+  passwordHash: varchar('password_hash', { length: 255 }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
@@ -57,6 +46,35 @@ export const familyMembersRelations = relations(familyMembers, ({ many }) => ({
   choreCompletions: many(choreCompletions),
   pointTransactions: many(pointTransactions),
   activityLogs: many(activityLog),
+  sessions: many(userSessions),
+}))
+
+// ============================================================================
+// User Sessions Table
+// ============================================================================
+export const userSessions = pgTable(
+  'user_sessions',
+  {
+    id: serial('id').primaryKey(),
+    familyMemberId: integer('family_member_id')
+      .notNull()
+      .references(() => familyMembers.id, { onDelete: 'cascade' }),
+    sessionToken: varchar('session_token', { length: 255 }).notNull().unique(),
+    deviceName: varchar('device_name', { length: 100 }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_user_sessions_token').on(table.sessionToken),
+    index('idx_user_sessions_member').on(table.familyMemberId),
+  ]
+)
+
+export const userSessionsRelations = relations(userSessions, ({ one }) => ({
+  familyMember: one(familyMembers, {
+    fields: [userSessions.familyMemberId],
+    references: [familyMembers.id],
+  }),
 }))
 
 // ============================================================================
@@ -94,12 +112,16 @@ export const chores = pgTable(
     endDate: date('end_date'),
     cooldownType: varchar('cooldown_type', { length: 20 }),
     cooldownHours: integer('cooldown_hours'),
+    qrToken: varchar('qr_token', { length: 64 }).unique(),
+    nfcTagId: varchar('nfc_tag_id', { length: 64 }).unique(),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index('idx_chores_due_date').on(table.dueDate, table.deletedAt),
+    index('idx_chores_qr_token').on(table.qrToken),
+    index('idx_chores_nfc_tag').on(table.nfcTagId),
   ]
 )
 
@@ -212,14 +234,14 @@ export const activityLogRelations = relations(activityLog, ({ one }) => ({
 // ============================================================================
 // Type Exports
 // ============================================================================
-export type Admin = typeof admin.$inferSelect
-export type NewAdmin = typeof admin.$inferInsert
-
 export type Settings = typeof settings.$inferSelect
 export type NewSettings = typeof settings.$inferInsert
 
 export type FamilyMember = typeof familyMembers.$inferSelect
 export type NewFamilyMember = typeof familyMembers.$inferInsert
+
+export type UserSession = typeof userSessions.$inferSelect
+export type NewUserSession = typeof userSessions.$inferInsert
 
 export type Category = typeof categories.$inferSelect
 export type NewCategory = typeof categories.$inferInsert
