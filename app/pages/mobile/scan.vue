@@ -5,7 +5,7 @@ definePageMeta({
 })
 
 const { user, isAuthenticated, logout, loadSession, isLoading: authLoading } = useMobileAuth()
-const { startQrScan, startNfcScan, isScanning, error: scanError, handleScanAndComplete, isNative } = useScanner()
+const { startQrScan, stopQrScan, startNfcScan, isScanning, error: scanError, handleScanAndComplete, isNative } = useScanner()
 
 // Check authentication
 onMounted(async () => {
@@ -20,8 +20,9 @@ const showResult = ref(false)
 const resultSuccess = ref(false)
 const resultMessage = ref('')
 const resultPoints = ref(0)
+const resultCooldown = ref<string | null>(null)
 
-// Handle QR scan
+// Handle QR scan - native scanner takes over the screen
 async function handleQrScan() {
   const result = await startQrScan()
   if (result) {
@@ -39,16 +40,41 @@ async function handleNfcScan() {
   }
 }
 
+// Format cooldown time remaining
+function formatCooldownRemaining(cooldownEndsAt: string): string {
+  const endTime = new Date(cooldownEndsAt)
+  const now = new Date()
+  const diffMs = endTime.getTime() - now.getTime()
+  
+  if (diffMs <= 0) return 'Ready now'
+  
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMins / 60)
+  
+  if (diffHours > 0) {
+    const remainingMins = diffMins % 60
+    return `${diffHours}h ${remainingMins}m remaining`
+  }
+  return `${diffMins}m remaining`
+}
+
 // Show completion result
-function showCompletionResult(result: { success: boolean; choreName?: string; pointsEarned?: number; error?: string }) {
+function showCompletionResult(result: { success: boolean; choreName?: string; pointsEarned?: number; error?: string; cooldownEndsAt?: string }) {
   showResult.value = true
   resultSuccess.value = result.success
+  resultCooldown.value = null
 
   if (result.success) {
     resultMessage.value = result.choreName || 'Chore completed!'
     resultPoints.value = result.pointsEarned || 0
   } else {
-    resultMessage.value = result.error || 'Failed to complete chore'
+    // Check for cooldown error
+    if (result.cooldownEndsAt) {
+      resultMessage.value = 'Chore is on cooldown'
+      resultCooldown.value = formatCooldownRemaining(result.cooldownEndsAt)
+    } else {
+      resultMessage.value = result.error || 'Failed to complete chore'
+    }
     resultPoints.value = 0
   }
 
@@ -120,18 +146,21 @@ function getAvatarUrl() {
             <div class="text-center">
               <div
                 class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full"
-                :class="resultSuccess ? 'bg-green-500' : 'bg-red-500'"
+                :class="resultSuccess ? 'bg-green-500' : resultCooldown ? 'bg-yellow-500' : 'bg-red-500'"
               >
                 <UIcon
-                  :name="resultSuccess ? 'i-lucide-check' : 'i-lucide-x'"
+                  :name="resultSuccess ? 'i-lucide-check' : resultCooldown ? 'i-lucide-clock' : 'i-lucide-x'"
                   class="h-10 w-10 text-white"
                 />
               </div>
               <h2 class="text-2xl font-bold text-white">
-                {{ resultSuccess ? 'Completed!' : 'Error' }}
+                {{ resultSuccess ? 'Completed!' : resultCooldown ? 'On Cooldown' : 'Error' }}
               </h2>
               <p class="mt-2 text-lg text-gray-300">
                 {{ resultMessage }}
+              </p>
+              <p v-if="resultCooldown" class="mt-2 text-lg text-yellow-400">
+                {{ resultCooldown }}
               </p>
               <p v-if="resultSuccess && resultPoints > 0" class="mt-2 text-xl font-bold text-yellow-400">
                 +{{ resultPoints }} points

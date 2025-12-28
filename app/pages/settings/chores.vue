@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Chore, Category, FamilyMember } from '~/types'
+import type { Chore, Category, FamilyMember, ChoresResponse, CategoriesResponse, MembersResponse, SettingsResponse } from '~/types'
 import QRCode from 'qrcode'
 
 definePageMeta({
@@ -10,9 +10,10 @@ const toast = useToast()
 const config = useRuntimeConfig()
 
 // Fetch data
-const { data: choresData, refresh: refreshChores } = await useFetch('/api/chores')
-const { data: categoriesData } = await useFetch('/api/categories')
-const { data: membersData } = await useFetch('/api/family-members')
+const { data: choresData, refresh: refreshChores } = await useFetch<ChoresResponse>('/api/chores')
+const { data: categoriesData } = await useFetch<CategoriesResponse>('/api/categories')
+const { data: membersData } = await useFetch<MembersResponse>('/api/family-members')
+const { data: settingsData } = await useFetch<SettingsResponse>('/api/settings')
 
 const allChores = computed(() => choresData.value?.data || [])
 const allCategories = computed(() => categoriesData.value?.data || [])
@@ -21,12 +22,12 @@ const allMembers = computed(() => membersData.value?.data || [])
 // Category and member options for select
 const categoryOptions = computed(() => [
   { label: 'No Category', value: null },
-  ...allCategories.value.map(c => ({ label: c.name, value: c.id })),
+  ...allCategories.value.map((c: Category) => ({ label: c.name, value: c.id })),
 ])
 
 const memberOptions = computed(() => [
   { label: 'Anyone', value: null },
-  ...allMembers.value.map(m => ({ label: m.name, value: m.id })),
+  ...allMembers.value.map((m: FamilyMember) => ({ label: m.name, value: m.id })),
 ])
 
 // Modal state
@@ -259,7 +260,9 @@ async function openQrNfcModal(chore: typeof allChores.value[0]) {
   // Generate QR code if chore has a qrToken
   if (chore.qrToken) {
     try {
-      const apiBase = config.public.apiBase || window.location.origin
+      // Use qrBaseUrl from settings, fallback to current URL
+      const qrBaseUrl = settingsData.value?.data?.qrBaseUrl
+      const apiBase = qrBaseUrl || config.public.apiBase || window.location.origin
       const qrData = `${apiBase}/api/chores/complete-by-qr?token=${chore.qrToken}`
       qrCodeDataUrl.value = await QRCode.toDataURL(qrData, {
         width: 300,

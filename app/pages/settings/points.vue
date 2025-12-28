@@ -1,15 +1,18 @@
 <script setup lang="ts">
+import type { SettingsResponse } from '~/types'
+
 definePageMeta({
   layout: 'settings',
 })
 
 // Fetch settings
-const { data: settingsData, refresh } = await useFetch('/api/settings')
+const { data: settingsData, refresh } = await useFetch<SettingsResponse>('/api/settings')
 
 // Form state
 const form = reactive({
   currency: 'USD',
   pointValue: 1,
+  qrBaseUrl: '',
 })
 
 // Sync form with fetched data
@@ -17,6 +20,7 @@ watch(settingsData, (data) => {
   if (data?.data) {
     form.currency = data.data.currency
     form.pointValue = Number(data.data.pointValue)
+    form.qrBaseUrl = data.data.qrBaseUrl || ''
   }
 }, { immediate: true })
 
@@ -58,6 +62,7 @@ async function handleSave() {
       body: {
         currency: form.currency,
         pointValue: form.pointValue,
+        qrBaseUrl: form.qrBaseUrl || null,
       },
     })
 
@@ -131,6 +136,30 @@ async function handleSave() {
             <strong>{{ currencySymbol }}{{ (100 * form.pointValue).toFixed(2) }}</strong>
           </p>
         </div>
+
+        <USeparator label="QR Code Settings" />
+
+        <!-- QR Base URL -->
+        <UFormField
+          label="QR Code Base URL"
+          name="qrBaseUrl"
+          hint="Server URL for generated QR codes (e.g., http://192.168.1.100:3001). Leave empty to use the current browser URL."
+        >
+          <UInput
+            v-model="form.qrBaseUrl"
+            type="url"
+            placeholder="http://192.168.1.100:3001"
+            icon="i-lucide-qr-code"
+          />
+        </UFormField>
+
+        <UAlert
+          v-if="!form.qrBaseUrl"
+          color="warning"
+          icon="i-lucide-alert-triangle"
+          title="QR codes will use the current browser URL"
+          description="If you access settings from localhost, QR codes won't work from mobile devices. Set a network-accessible URL for mobile scanning."
+        />
 
         <!-- Messages -->
         <UAlert

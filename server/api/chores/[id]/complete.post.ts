@@ -94,6 +94,10 @@ export default defineEventHandler(async (event) => {
       })
       .returning()
 
+    if (!completion) {
+      return { error: 'Failed to create completion record' }
+    }
+
     // Award points if any
     if (chore.points > 0) {
       await db.insert(pointTransactions).values({

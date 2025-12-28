@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FamilyMember } from '~/types'
+import type { FamilyMember, FamilyMemberWithPassword, MembersResponse } from '~/types'
 
 definePageMeta({
   layout: 'settings',
@@ -22,7 +22,7 @@ const PASTEL_COLORS = [
 ]
 
 // Fetch family members
-const { data: membersData, refresh } = await useFetch('/api/family-members')
+const { data: membersData, refresh } = await useFetch<MembersResponse>('/api/family-members')
 const members = computed(() => membersData.value?.data || [])
 
 // Modal state
@@ -30,17 +30,26 @@ const isModalOpen = ref(false)
 const editingMember = ref<FamilyMember | null>(null)
 const isDeleteModalOpen = ref(false)
 const deletingMember = ref<FamilyMember | null>(null)
+const isPasswordModalOpen = ref(false)
+const passwordMember = ref<FamilyMemberWithPassword | null>(null)
 
 // Form state
 const form = reactive({
   name: '',
   avatarType: 'dicebear' as 'dicebear' | 'custom',
   avatarValue: '',
-  color: PASTEL_COLORS[0].value,
+  color: PASTEL_COLORS[0]?.value || '#FFB3BA' as string,
+})
+
+// Password form state
+const passwordForm = reactive({
+  password: '',
+  confirmPassword: '',
 })
 
 const loading = ref(false)
 const error = ref<string | null>(null)
+const toast = useToast()
 
 // Generate DiceBear avatar URL
 function getDiceBearUrl(seed: string) {
@@ -58,7 +67,7 @@ function openCreate() {
   form.name = ''
   form.avatarType = 'dicebear'
   form.avatarValue = `new-user-${Date.now()}`
-  form.color = PASTEL_COLORS[Math.floor(Math.random() * PASTEL_COLORS.length)].value
+  form.color = PASTEL_COLORS[Math.floor(Math.random() * PASTEL_COLORS.length)]?.value || '#FFB3BA'
   error.value = null
   isModalOpen.value = true
 }
@@ -154,6 +163,65 @@ async function handleDelete() {
     loading.value = false
   }
 }
+
+// Open password modal
+function openPasswordModal(member: FamilyMember) {
+  passwordMember.value = member
+  passwordForm.password = ''
+  passwordForm.confirmPassword = ''
+  error.value = null
+  isPasswordModalOpen.value = true
+}
+
+// Set password
+async function handleSetPassword() {
+  if (!passwordMember.value) return
+  
+  if (!passwordForm.password) {
+    error.value = 'Password is required'
+    return
+  }
+  
+  if (passwordForm.password.length < 4) {
+    error.value = 'Password must be at least 4 characters'
+    return
+  }
+  
+  if (passwordForm.password !== passwordForm.confirmPassword) {
+    error.value = 'Passwords do not match'
+    return
+  }
+
+  loading.value = true
+  error.value = null
+
+  try {
+    const response = await $fetch(`/api/family-members/${passwordMember.value.id}/password`, {
+      method: 'PUT',
+      body: {
+        password: passwordForm.password,
+      },
+    })
+
+    if ('error' in response) {
+      error.value = response.error
+      return
+    }
+
+    isPasswordModalOpen.value = false
+    passwordMember.value = null
+    toast.add({
+      title: 'Password Set',
+      description: 'Password has been updated successfully',
+      color: 'success',
+    })
+    await refresh()
+  } catch (e) {
+    error.value = 'Failed to set password'
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <template>
@@ -214,15 +282,44 @@ async function handleDelete() {
             <h3 class="font-semibold text-gray-900 dark:text-white">
               {{ member.name }}
             </h3>
-            <div
-              class="mt-1 inline-block size-4 rounded-full"
-              :style="{ backgroundColor: member.color }"
-            />
+            <div class="mt-1 flex items-center gap-2">
+              <div
+                class="inline-block size-4 rounded-full"
+                :style="{ backgroundColor: member.color }"
+              />
+              <UBadge 
+                v-if="member.passwordHash" 
+                color="success" 
+                variant="subtle"
+                size="xs"
+              >
+                <UIcon name="i-lucide-key" class="mr-1 size-3" />
+                Password set
+              </UBadge>
+              <UBadge 
+                v-else 
+                color="warning" 
+                variant="subtle"
+                size="xs"
+              >
+                <UIcon name="i-lucide-alert-triangle" class="mr-1 size-3" />
+                No password
+              </UBadge>
+            </div>
           </div>
         </div>
 
         <template #footer>
           <div class="flex justify-end gap-2">
+            <UButton
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-key"
+              size="sm"
+              @click="openPasswordModal(member)"
+            >
+              Password
+            </UButton>
             <UButton
               color="neutral"
               variant="ghost"
@@ -401,6 +498,80 @@ async function handleDelete() {
               </UButton>
             </div>
           </template>
+        </UCard>
+      </template>
+    </UModal>
+
+    <!-- Password Modal -->
+    <UModal 
+      v-model:open="isPasswordModalOpen"
+      title="Set Password"
+      :description="`Set login password for ${passwordMember?.name || 'member'}`"
+    >
+      <template #content>
+        <UCard>
+          <template #header>
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-semibold">
+                Set Password for {{ passwordMember?.name }}
+              </h3>
+              <UButton
+                color="neutral"
+                variant="ghost"
+                icon="i-lucide-x"
+                @click="isPasswordModalOpen = false"
+              />
+            </div>
+          </template>
+
+          <form class="space-y-4" @submit.prevent="handleSetPassword">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              {{ passwordMember?.passwordHash ? 'Update the password for this family member.' : 'Set a password so this family member can log in to the mobile app.' }}
+            </p>
+
+            <!-- Password -->
+            <UFormField label="New Password" name="password" required>
+              <UInput
+                v-model="passwordForm.password"
+                type="password"
+                placeholder="Enter password"
+                icon="i-lucide-lock"
+              />
+            </UFormField>
+
+            <!-- Confirm Password -->
+            <UFormField label="Confirm Password" name="confirmPassword" required>
+              <UInput
+                v-model="passwordForm.confirmPassword"
+                type="password"
+                placeholder="Confirm password"
+                icon="i-lucide-lock"
+              />
+            </UFormField>
+
+            <!-- Error -->
+            <UAlert
+              v-if="error"
+              color="error"
+              icon="i-lucide-alert-circle"
+              :title="error"
+            />
+
+            <!-- Actions -->
+            <div class="flex justify-end gap-2">
+              <UButton
+                type="button"
+                color="neutral"
+                variant="outline"
+                @click="isPasswordModalOpen = false"
+              >
+                Cancel
+              </UButton>
+              <UButton type="submit" :loading="loading">
+                {{ passwordMember?.passwordHash ? 'Update Password' : 'Set Password' }}
+              </UButton>
+            </div>
+          </form>
         </UCard>
       </template>
     </UModal>

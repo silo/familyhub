@@ -15,6 +15,13 @@
       "when": 1735335600000,
       "tag": "0001_user-auth-qr-nfc",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1766938824175,
+      "tag": "0002_mysterious_clea",
+      "breakpoints": true
     }
   ]
 }

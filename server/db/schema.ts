@@ -22,6 +22,7 @@ export const settings = pgTable('settings', {
   id: serial('id').primaryKey(),
   currency: varchar('currency', { length: 3 }).notNull().default('USD'),
   pointValue: decimal('point_value', { precision: 10, scale: 2 }).notNull().default('1.00'),
+  qrBaseUrl: varchar('qr_base_url', { length: 500 }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

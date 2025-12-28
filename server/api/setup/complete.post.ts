@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
     })
 
     // Create admin family member with random color and password
-    const randomColor = PASTEL_COLORS[Math.floor(Math.random() * PASTEL_COLORS.length)]
+    const randomColor = PASTEL_COLORS[Math.floor(Math.random() * PASTEL_COLORS.length)] || '#FFB3BA'
     const avatarSeed = `${adminName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
 
     await db.insert(familyMembers).values({

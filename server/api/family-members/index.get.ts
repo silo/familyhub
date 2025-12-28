@@ -9,8 +9,14 @@ export default defineEventHandler(async () => {
       .from(familyMembers)
       .orderBy(asc(familyMembers.createdAt))
 
+    // Don't expose actual password hash, just whether one is set
+    const sanitizedMembers = members.map(member => ({
+      ...member,
+      passwordHash: member.passwordHash ? true : false,
+    }))
+
     return {
-      data: members,
+      data: sanitizedMembers,
     }
   } catch (error) {
     console.error('Failed to fetch family members:', error)

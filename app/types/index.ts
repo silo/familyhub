@@ -258,3 +258,154 @@ export interface ApiError {
   error: string
   statusCode?: number
 }
+
+// ============================================================================
+// API Response Types
+// ============================================================================
+
+/**
+ * Response for chores list API
+ */
+export interface ChoresResponse {
+  data: (Chore & { category?: Category | null; assignee?: FamilyMember | null })[]
+}
+
+/**
+ * Response for categories list API
+ */
+export interface CategoriesResponse {
+  data: Category[]
+}
+
+/**
+ * Response for family members list API
+ */
+export interface MembersResponse {
+  data: FamilyMemberWithPassword[]
+}
+
+/**
+ * Response for settings API
+ */
+export interface SettingsResponse {
+  data: {
+    id: number
+    currency: string
+    pointValue: string
+    qrBaseUrl: string | null
+    createdAt: string
+    updatedAt: string
+  }
+}
+
+/**
+ * Response for points history API
+ */
+export interface PointsHistoryResponse {
+  data: {
+    totalPoints: number
+    transactions: PointTransactionWithDate[]
+  }
+}
+
+/**
+ * Point transaction with string date (from API)
+ */
+export interface PointTransactionWithDate {
+  id: number
+  type: 'earned' | 'redeemed'
+  amount: number
+  description: string | null
+  createdAt: string
+}
+
+/**
+ * Family member with password hash flag (from API)
+ */
+export interface FamilyMemberWithPassword extends FamilyMember {
+  passwordHash?: boolean
+}
+
+// ============================================================================
+// Mobile Auth Types
+// ============================================================================
+
+/**
+ * User type for mobile authentication
+ */
+export interface MobileUser {
+  id: number
+  name: string
+  avatarType: string
+  avatarValue: string
+  color: string
+  isAdmin: boolean
+}
+
+/**
+ * Session data for mobile app
+ */
+export interface MobileSession {
+  token: string
+  expiresAt: string
+  user: MobileUser
+}
+
+/**
+ * Response for login API
+ */
+export interface LoginResponse {
+  data: {
+    token: string
+    expiresAt: string
+    user: MobileUser
+  }
+}
+
+/**
+ * Response for /api/auth/me endpoint
+ */
+export interface MeResponse {
+  data: MobileUser
+}
+
+// ============================================================================
+// Scanner Types
+// ============================================================================
+
+/**
+ * Result from QR or NFC scan
+ */
+export interface ScanResult {
+  type: 'qr' | 'nfc'
+  value: string
+}
+
+/**
+ * Result from chore completion via scan
+ */
+export interface CompletionResult {
+  success: boolean
+  choreName?: string
+  pointsEarned?: number
+  error?: string
+  cooldownEndsAt?: string
+}
+
+/**
+ * API response for successful chore completion
+ */
+export interface CompletionApiResponse {
+  data: {
+    choreName: string
+    pointsEarned: number
+  }
+}
+
+/**
+ * API response for failed chore completion
+ */
+export interface CompletionApiError {
+  error: string
+  cooldownEndsAt?: string
+}

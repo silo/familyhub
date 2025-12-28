@@ -1,5 +1,7 @@
 <script setup lang="ts">
 // Mobile profile page
+import type { PointsHistoryResponse } from '~/types'
+
 definePageMeta({
   layout: 'default',
 })
@@ -16,8 +18,8 @@ onMounted(async () => {
 })
 
 // Fetch points for current user
-const { data: pointsData, refresh: refreshPoints } = await useFetch(() => 
-  user.value ? apiUrl(`/api/points/history/${user.value.id}`) : null,
+const { data: pointsData, refresh: refreshPoints } = await useFetch<PointsHistoryResponse>(
+  () => user.value ? apiUrl(`/api/points/history/${user.value.id}`) : apiUrl('/api/points/history/0'),
   {
     headers: getAuthHeaders(),
     watch: [user],
@@ -25,9 +27,25 @@ const { data: pointsData, refresh: refreshPoints } = await useFetch(() =>
 )
 
 const totalPoints = computed(() => {
-  if (!pointsData.value || 'error' in pointsData.value) return 0
+  if (!pointsData.value || !('data' in pointsData.value)) return 0
   return pointsData.value.data?.totalPoints || 0
 })
+
+const transactions = computed(() => {
+  if (!pointsData.value || !('data' in pointsData.value)) return []
+  return pointsData.value.data?.transactions || []
+})
+
+// Format date
+function formatDate(dateString: string) {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
 
 // Handle logout
 async function handleLogout() {
@@ -40,6 +58,11 @@ async function handleChangeServer() {
   await logout()
   await clearConfig()
   await navigateTo('/mobile/setup')
+}
+
+// Wrapper for refresh button
+function handleRefresh() {
+  refreshPoints()
 }
 
 function getAvatarUrl() {
@@ -98,6 +121,55 @@ function getAvatarUrl() {
           </div>
         </UCard>
 
+        <!-- Points History -->
+        <div class="mb-6">
+          <h3 class="mb-3 text-sm font-medium text-gray-500">
+            Recent Activity
+          </h3>
+          
+          <div v-if="transactions.length === 0" class="rounded-lg bg-white p-4 text-center dark:bg-gray-800">
+            <p class="text-sm text-gray-500">No transactions yet</p>
+          </div>
+
+          <div v-else class="space-y-2">
+            <div
+              v-for="tx in transactions"
+              :key="tx.id"
+              class="flex items-center justify-between rounded-lg bg-white p-3 dark:bg-gray-800"
+            >
+              <div class="flex items-center gap-3">
+                <div
+                  :class="[
+                    'flex h-8 w-8 items-center justify-center rounded-full',
+                    tx.type === 'earned' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                  ]"
+                >
+                  <UIcon
+                    :name="tx.type === 'earned' ? 'i-lucide-plus' : 'i-lucide-minus'"
+                    class="h-4 w-4"
+                  />
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-900 dark:text-white">
+                    {{ tx.description || (tx.type === 'earned' ? 'Points earned' : 'Points redeemed') }}
+                  </p>
+                  <p class="text-xs text-gray-500">
+                    {{ formatDate(tx.createdAt) }}
+                  </p>
+                </div>
+              </div>
+              <span
+                :class="[
+                  'font-semibold',
+                  tx.type === 'earned' ? 'text-green-600' : 'text-red-600'
+                ]"
+              >
+                {{ tx.type === 'earned' ? '+' : '-' }}{{ Math.abs(tx.amount) }}
+              </span>
+            </div>
+          </div>
+        </div>
+
         <!-- Actions -->
         <div class="space-y-3">
           <UButton
@@ -105,7 +177,7 @@ function getAvatarUrl() {
             color="neutral"
             variant="outline"
             icon="i-lucide-refresh-cw"
-            @click="refreshPoints"
+            @click="handleRefresh"
           >
             Refresh Points
           </UButton>

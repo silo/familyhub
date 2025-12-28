@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   // Validate input
   const parsed = redeemSchema.safeParse(body)
   if (!parsed.success) {
-    return { error: parsed.error.issues[0].message }
+    return { error: parsed.error.issues[0]?.message || 'Invalid input' }
   }
 
   const { familyMemberId } = parsed.data
@@ -77,6 +77,10 @@ export default defineEventHandler(async (event) => {
         description: `Redeemed ${currentBalance} points for ${currency} ${moneyValue}`,
       })
       .returning()
+
+    if (!transaction) {
+      return { error: 'Failed to create transaction' }
+    }
 
     // Log activity
     await db.insert(activityLog).values({

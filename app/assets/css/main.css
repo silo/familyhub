@@ -1,2 +1,13 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+/* Capacitor barcode scanner - make WebView transparent when scanning */
+body.scanner-active {
+  background: transparent !important;
+}
+
+body.scanner-active ion-app,
+body.scanner-active #__nuxt,
+body.scanner-active .min-h-screen {
+  background: transparent !important;
+  --background: transparent !important;
+}

@@ -1,5 +1,5 @@
 // server/utils/chore-completion.ts
-import { eq, and, desc } from 'drizzle-orm'
+import { eq, and, desc, isNull } from 'drizzle-orm'
 import { db } from '../db'
 import { chores, choreCompletions, pointTransactions, activityLog, familyMembers } from '../db/schema'
 
@@ -97,6 +97,10 @@ export async function completeChore(
       })
       .returning()
 
+    if (!completion) {
+      return { success: false, error: 'Failed to create completion record' }
+    }
+
     // Award points if any
     if (chore.points > 0) {
       await db.insert(pointTransactions).values({
@@ -131,7 +135,7 @@ export async function completeChore(
     }
 
     return {
-      success: true,
+      success: true as const,
       completion,
       pointsEarned: chore.points,
       choreName: chore.title,
@@ -150,7 +154,7 @@ export async function findChoreByQrToken(token: string) {
   return db.query.chores.findFirst({
     where: and(
       eq(chores.qrToken, token),
-      eq(chores.deletedAt, null as any) // Not deleted
+      isNull(chores.deletedAt) // Not deleted
     ),
   })
 }
@@ -162,7 +166,7 @@ export async function findChoreByNfcTag(tagId: string) {
   return db.query.chores.findFirst({
     where: and(
       eq(chores.nfcTagId, tagId),
-      eq(chores.deletedAt, null as any) // Not deleted
+      isNull(chores.deletedAt) // Not deleted
     ),
   })
 }

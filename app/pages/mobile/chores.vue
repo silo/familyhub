@@ -1,11 +1,17 @@
 <script setup lang="ts">
 // Mobile chores page - shows chores assigned to current user
+import type { Chore, ChoresResponse } from '~/types'
+
 definePageMeta({
   layout: 'default',
 })
 
+const toast = useToast()
 const { user, isAuthenticated, loadSession, isLoading, getAuthHeaders } = useMobileAuth()
 const { apiUrl } = useMobileConfig()
+
+// State
+const completing = ref<number | null>(null)
 
 // Check authentication
 onMounted(async () => {
@@ -16,30 +22,75 @@ onMounted(async () => {
 })
 
 // Fetch chores
-const { data: choresResponse, refresh: refreshChores } = await useFetch(() => apiUrl('/api/chores'), {
+const { data: choresResponse, refresh: refreshChores } = await useFetch<ChoresResponse>(() => apiUrl('/api/chores'), {
   headers: getAuthHeaders(),
   watch: [user],
 })
 
 // Filter chores assigned to current user
 const myChores = computed(() => {
-  if (!choresResponse.value || 'error' in choresResponse.value || !user.value) {
+  if (!choresResponse.value || !('data' in choresResponse.value) || !user.value) {
     return []
   }
   return choresResponse.value.data?.filter(
-    (chore: any) => chore.assigneeId === user.value?.id
+    (chore) => chore.assigneeId === user.value?.id
   ) || []
 })
 
-// All available chores (unassigned or assigned to user)
-const availableChores = computed(() => {
-  if (!choresResponse.value || 'error' in choresResponse.value) {
+// Open chores (unassigned - anyone can complete)
+const openChores = computed(() => {
+  if (!choresResponse.value || !('data' in choresResponse.value)) {
     return []
   }
   return choresResponse.value.data?.filter(
-    (chore: any) => !chore.assigneeId || chore.assigneeId === user.value?.id
+    (chore) => !chore.assigneeId
   ) || []
 })
+
+// Complete a chore manually
+async function completeChore(chore: Chore) {
+  if (completing.value) return
+  
+  completing.value = chore.id
+  
+  try {
+    const response = await $fetch<{ data: unknown } | { error: string }>(apiUrl(`/api/chores/${chore.id}/complete`), {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: {
+        completedById: user.value?.id,
+      },
+    })
+    
+    if ('error' in response) {
+      toast.add({
+        title: 'Error',
+        description: response.error,
+        color: 'error',
+      })
+    } else {
+      toast.add({
+        title: 'Chore Completed!',
+        description: `+${chore.points} points`,
+        color: 'success',
+      })
+      await refreshChores()
+    }
+  } catch (error: any) {
+    toast.add({
+      title: 'Error',
+      description: error.data?.error || 'Failed to complete chore',
+      color: 'error',
+    })
+  } finally {
+    completing.value = null
+  }
+}
+
+// Wrapper for refresh button click
+function handleRefresh() {
+  refreshChores()
+}
 </script>
 
 <template>
@@ -60,7 +111,7 @@ const availableChores = computed(() => {
             color="neutral"
             variant="ghost"
             icon="i-lucide-refresh-cw"
-            @click="refreshChores"
+            @click="handleRefresh"
           />
         </div>
       </header>
@@ -86,78 +137,96 @@ const availableChores = computed(() => {
               :key="chore.id"
               class="transition-all hover:shadow-md"
             >
-              <div class="flex items-start justify-between">
-                <div>
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex-1">
                   <h3 class="font-medium text-gray-900 dark:text-white">
                     {{ chore.title }}
                   </h3>
                   <p v-if="chore.description" class="mt-1 text-sm text-gray-500">
                     {{ chore.description }}
                   </p>
+                  <div class="mt-2 flex items-center gap-2">
+                    <span
+                      v-if="chore.points > 0"
+                      class="rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800"
+                    >
+                      {{ chore.points }} pts
+                    </span>
+                    <UIcon
+                      v-if="chore.qrToken"
+                      name="i-lucide-qr-code"
+                      class="h-4 w-4 text-gray-400"
+                      title="Has QR code"
+                    />
+                    <UIcon
+                      v-if="chore.nfcTagId"
+                      name="i-lucide-nfc"
+                      class="h-4 w-4 text-gray-400"
+                      title="Has NFC tag"
+                    />
+                  </div>
                 </div>
-                <div class="flex items-center gap-2">
-                  <span
-                    v-if="chore.points > 0"
-                    class="rounded-full bg-yellow-100 px-2 py-1 text-sm font-medium text-yellow-800"
-                  >
-                    {{ chore.points }} pts
-                  </span>
-                  <UIcon
-                    v-if="chore.qrToken"
-                    name="i-lucide-qr-code"
-                    class="h-4 w-4 text-gray-400"
-                    title="Has QR code"
-                  />
-                  <UIcon
-                    v-if="chore.nfcTagId"
-                    name="i-lucide-nfc"
-                    class="h-4 w-4 text-gray-400"
-                    title="Has NFC tag"
-                  />
-                </div>
+                <UButton
+                  color="primary"
+                  size="sm"
+                  icon="i-lucide-check"
+                  :loading="completing === chore.id"
+                  @click="completeChore(chore)"
+                >
+                  Done
+                </UButton>
               </div>
             </UCard>
           </div>
         </section>
 
-        <!-- Available chores -->
+        <!-- Open chores -->
         <section>
           <h2 class="mb-3 text-sm font-medium text-gray-500">
-            Available chores ({{ availableChores.length }})
+            Open Chores ({{ openChores.length }})
           </h2>
 
-          <div v-if="availableChores.length === 0" class="rounded-lg bg-white p-6 text-center dark:bg-gray-800">
+          <div v-if="openChores.length === 0" class="rounded-lg bg-white p-6 text-center dark:bg-gray-800">
             <p class="text-gray-600 dark:text-gray-400">
-              No available chores
+              No open chores available
             </p>
           </div>
 
           <div v-else class="space-y-3">
             <UCard
-              v-for="chore in availableChores"
+              v-for="chore in openChores"
               :key="chore.id"
               class="transition-all hover:shadow-md"
             >
-              <div class="flex items-start justify-between">
-                <div>
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex-1">
                   <h3 class="font-medium text-gray-900 dark:text-white">
                     {{ chore.title }}
                   </h3>
                   <p v-if="chore.description" class="mt-1 text-sm text-gray-500">
                     {{ chore.description }}
                   </p>
-                  <p v-if="!chore.assigneeId" class="mt-1 text-xs text-blue-500">
-                    Unassigned - anyone can complete
-                  </p>
+                  <div class="mt-2 flex items-center gap-2">
+                    <span class="text-xs text-blue-500">
+                      Open - anyone can complete
+                    </span>
+                    <span
+                      v-if="chore.points > 0"
+                      class="rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800"
+                    >
+                      {{ chore.points }} pts
+                    </span>
+                  </div>
                 </div>
-                <div class="flex items-center gap-2">
-                  <span
-                    v-if="chore.points > 0"
-                    class="rounded-full bg-yellow-100 px-2 py-1 text-sm font-medium text-yellow-800"
-                  >
-                    {{ chore.points }} pts
-                  </span>
-                </div>
+                <UButton
+                  color="primary"
+                  size="sm"
+                  icon="i-lucide-check"
+                  :loading="completing === chore.id"
+                  @click="completeChore(chore)"
+                >
+                  Done
+                </UButton>
               </div>
             </UCard>
           </div>

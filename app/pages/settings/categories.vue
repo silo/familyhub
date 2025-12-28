@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Category } from '~/types'
+import type { Category, CategoriesResponse } from '~/types'
 
 definePageMeta({
   layout: 'settings',
@@ -33,7 +33,7 @@ const CATEGORY_ICONS = [
 ]
 
 // Fetch categories
-const { data: categoriesData, refresh } = await useFetch('/api/categories')
+const { data: categoriesData, refresh } = await useFetch<CategoriesResponse>('/api/categories')
 const allCategories = computed(() => categoriesData.value?.data || [])
 
 // Modal state
@@ -46,7 +46,7 @@ const deletingCategory = ref<Category | null>(null)
 const form = reactive({
   name: '',
   color: CATEGORY_COLORS[0],
-  icon: CATEGORY_ICONS[0].value,
+  icon: CATEGORY_ICONS[0]?.value || 'i-lucide-home' as string,
 })
 
 const loading = ref(false)
@@ -57,7 +57,7 @@ function openCreate() {
   editingCategory.value = null
   form.name = ''
   form.color = CATEGORY_COLORS[Math.floor(Math.random() * CATEGORY_COLORS.length)]
-  form.icon = CATEGORY_ICONS[0].value
+  form.icon = CATEGORY_ICONS[0]?.value || 'i-lucide-home'
   error.value = null
   isModalOpen.value = true
 }
@@ -67,7 +67,7 @@ function openEdit(category: Category) {
   editingCategory.value = category
   form.name = category.name
   form.color = category.color || CATEGORY_COLORS[0]
-  form.icon = category.icon || CATEGORY_ICONS[0].value
+  form.icon = category.icon || CATEGORY_ICONS[0]?.value || 'i-lucide-home'
   error.value = null
   isModalOpen.value = true
 }

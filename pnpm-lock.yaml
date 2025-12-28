@@ -8,9 +8,9 @@ importers:
 
   .:
     dependencies:
-      '@capacitor-mlkit/barcode-scanning':
-        specifier: ^8.0.0
-        version: 8.0.0(@capacitor/core@8.0.0)
+      '@capacitor/barcode-scanner':
+        specifier: ^3.0.0
+        version: 3.0.0(@capacitor/core@8.0.0)
       '@capacitor/cli':
         specifier: ^8.0.0
         version: 8.0.0
@@ -220,15 +220,15 @@ packages:
       commander:
         optional: true
 
-  '@capacitor-mlkit/barcode-scanning@8.0.0':
-    resolution: {integrity: sha512-1bmCv26ml1/Vb6YKwMv9dzkVcpPwPGehx3jmcXMdTg2eFg7zgMyWswlbTL5vfIUazC5JbEIc0f6sOG6W2N03nQ==}
-    peerDependencies:
-      '@capacitor/core': '>=8.0.0'
-
   '@capacitor/android@8.0.0':
     resolution: {integrity: sha512-FrBSvVAC5JuLaYHNyDnwQny0/SYnP+xDQbc/KA4wInmRkMXLDv22fkx9aBJIDrxjuUVd+jsRih4SAt8FgMEzCw==}
     peerDependencies:
       '@capacitor/core': ^8.0.0
+
+  '@capacitor/barcode-scanner@3.0.0':
+    resolution: {integrity: sha512-UWcN+9uSk1+RxR/Sh794727QH7I47/N1NoTGcumjRjhbhAb6CHJPyxOf1LyIoBILt4PinUsLhegCmzlBDrB3lA==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
 
   '@capacitor/cli@8.0.0':
     resolution: {integrity: sha512-v9hEBi69xGxuuZhg55N031bMEenKaPSv71Il8C22VOOH6surDyv/MPeImN0oVfFc7eiklaW3rDFYVz6cmXfJWQ==}
@@ -2787,6 +2787,9 @@ packages:
   hookable@5.5.3:
     resolution: {integrity: sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ==}
 
+  html5-qrcode@2.3.8:
+    resolution: {integrity: sha512-jsr4vafJhwoLVEDW3n1KvPnCCXWaQfRng0/EEYk1vNcQGcG/htAdhJX0be8YyqMoSz7+hZvOZSTAepsabiuhiQ==}
+
   http-errors@2.0.1:
     resolution: {integrity: sha512-4FbRdAX+bSdmo4AUFuS0WNiPz8NgFt+r8ThgNWmlrjQjt1Q7ZR9+zTlce2859x4KSXrwIsaeTqDoKQmtP8pLmQ==}
     engines: {node: '>= 0.8'}
@@ -4680,13 +4683,14 @@ snapshots:
       cac: 6.7.14
       citty: 0.1.6
 
-  '@capacitor-mlkit/barcode-scanning@8.0.0(@capacitor/core@8.0.0)':
-    dependencies:
-      '@capacitor/core': 8.0.0
-
   '@capacitor/android@8.0.0(@capacitor/core@8.0.0)':
     dependencies:
       '@capacitor/core': 8.0.0
+
+  '@capacitor/barcode-scanner@3.0.0(@capacitor/core@8.0.0)':
+    dependencies:
+      '@capacitor/core': 8.0.0
+      html5-qrcode: 2.3.8
 
   '@capacitor/cli@8.0.0':
     dependencies:
@@ -7302,6 +7306,8 @@ snapshots:
   hey-listen@1.0.8: {}
 
   hookable@5.5.3: {}
+
+  html5-qrcode@2.3.8: {}
 
   http-errors@2.0.1:
     dependencies:

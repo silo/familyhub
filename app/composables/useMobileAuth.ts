@@ -2,28 +2,14 @@
 // Composable for mobile app authentication with session persistence
 
 import { Preferences } from '@capacitor/preferences'
+import type { MobileUser, MobileSession, LoginResponse, MeResponse } from '~/types'
 
 const SESSION_KEY = 'familyhub_session'
 const USER_KEY = 'familyhub_user'
 
-interface User {
-  id: number
-  name: string
-  avatarType: string
-  avatarValue: string
-  color: string
-  isAdmin: boolean
-}
-
-interface Session {
-  token: string
-  expiresAt: string
-  user: User
-}
-
 export function useMobileAuth() {
   const { apiUrl } = useMobileConfig()
-  const user = useState<User | null>('mobile-user', () => null)
+  const user = useState<MobileUser | null>('mobile-user', () => null)
   const token = useState<string | null>('mobile-token', () => null)
   const isAuthenticated = computed(() => !!token.value && !!user.value)
   const isLoading = ref(true)
@@ -34,7 +20,7 @@ export function useMobileAuth() {
     try {
       const { value: sessionJson } = await Preferences.get({ key: SESSION_KEY })
       if (sessionJson) {
-        const session: Session = JSON.parse(sessionJson)
+        const session: MobileSession = JSON.parse(sessionJson)
         
         // Check if session is expired
         if (new Date(session.expiresAt) > new Date()) {
@@ -54,7 +40,7 @@ export function useMobileAuth() {
   }
 
   // Save session to storage
-  async function saveSession(session: Session) {
+  async function saveSession(session: MobileSession) {
     try {
       await Preferences.set({
         key: SESSION_KEY,
@@ -86,7 +72,7 @@ export function useMobileAuth() {
     deviceName?: string
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const response = await $fetch(apiUrl('/api/auth/login'), {
+      const response = await $fetch<LoginResponse | { error: string }>(apiUrl('/api/auth/login'), {
         method: 'POST',
         body: {
           familyMemberId,
@@ -144,7 +130,7 @@ export function useMobileAuth() {
     if (!token.value) return
 
     try {
-      const response = await $fetch(apiUrl('/api/auth/me'), {
+      const response = await $fetch<MeResponse | { error: string }>(apiUrl('/api/auth/me'), {
         headers: getAuthHeaders(),
       })
 

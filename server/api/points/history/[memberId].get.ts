@@ -1,6 +1,6 @@
 // server/api/points/history/[memberId].get.ts
 // Get point transaction history for a specific member
-import { eq, desc, and } from 'drizzle-orm'
+import { eq, desc, sum } from 'drizzle-orm'
 import { db, pointTransactions, familyMembers } from '../../../db'
 
 export default defineEventHandler(async (event) => {
@@ -33,5 +33,18 @@ export default defineEventHandler(async (event) => {
     .orderBy(desc(pointTransactions.createdAt))
     .limit(50)
 
-  return { data: transactions }
+  // Calculate total points
+  const totalResult = await db
+    .select({ total: sum(pointTransactions.amount) })
+    .from(pointTransactions)
+    .where(eq(pointTransactions.familyMemberId, memberId))
+
+  const totalPoints = Number(totalResult[0]?.total) || 0
+
+  return { 
+    data: {
+      transactions,
+      totalPoints,
+    }
+  }
 })

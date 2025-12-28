@@ -22,9 +22,13 @@ export default defineEventHandler(async (event) => {
 
   const { token } = result.data
 
+  console.log('[QR Complete API] Looking for chore with token:', token)
+
   try {
     // Find chore by QR token
     const chore = await findChoreByQrToken(token)
+
+    console.log('[QR Complete API] Found chore:', chore ? { id: chore.id, name: chore.name, qrToken: chore.qrToken } : 'null')
 
     if (!chore) {
       return { error: 'Invalid QR code or chore not found' }

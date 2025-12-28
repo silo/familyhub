@@ -3,19 +3,7 @@
 
 import { Capacitor } from '@capacitor/core'
 import { Haptics, ImpactStyle } from '@capacitor/haptics'
-
-interface ScanResult {
-  type: 'qr' | 'nfc'
-  value: string
-}
-
-interface CompletionResult {
-  success: boolean
-  choreName?: string
-  pointsEarned?: number
-  error?: string
-  cooldownEndsAt?: string
-}
+import type { ScanResult, CompletionResult, CompletionApiResponse, CompletionApiError } from '~/types'
 
 export function useScanner() {
   const isScanning = ref(false)
@@ -48,7 +36,7 @@ export function useScanner() {
     }
   }
 
-  // Start QR code scanning
+  // Start QR code scanning using @capacitor/barcode-scanner
   async function startQrScan(): Promise<ScanResult | null> {
     if (!isNative.value) {
       error.value = 'QR scanning is only available on mobile devices'
@@ -59,60 +47,71 @@ export function useScanner() {
     error.value = null
 
     try {
-      const { BarcodeScanner } = await import('@capacitor-mlkit/barcode-scanning')
+      const { CapacitorBarcodeScanner, CapacitorBarcodeScannerTypeHintALLOption } = await import('@capacitor/barcode-scanner')
 
-      // Check permissions
-      const { camera } = await BarcodeScanner.checkPermissions()
-      if (camera !== 'granted') {
-        const { camera: newPermission } = await BarcodeScanner.requestPermissions()
-        if (newPermission !== 'granted') {
-          error.value = 'Camera permission is required for QR scanning'
-          return null
-        }
-      }
+      // scanBarcode is the correct API method
+      const result = await CapacitorBarcodeScanner.scanBarcode({
+        hint: CapacitorBarcodeScannerTypeHintALLOption.ALL,
+        scanInstructions: 'Point camera at QR code',
+        scanButton: false,
+        scanText: 'Scanning...',
+        cameraDirection: 1, // BACK
+        scanOrientation: 1, // PORTRAIT
+        android: {
+          scanningLibrary: 'zxing',
+        },
+      })
 
-      // Start scanning
-      const { barcodes } = await BarcodeScanner.scan()
-
-      if (barcodes.length > 0) {
-        const barcode = barcodes[0]
+      if (result.ScanResult) {
         await vibrate('light')
 
-        // Parse the QR code value
-        // Expected format: familyhub://chore/<qr_token>
-        const value = barcode.rawValue || ''
-        let qrToken = value
+        // Debug: Log raw scan result
+        console.log('[Scanner] Raw scan result:', result.ScanResult)
 
-        if (value.startsWith('familyhub://chore/')) {
-          qrToken = value.replace('familyhub://chore/', '')
+        // Parse the QR code value
+        // Format 1: Full URL - https://example.com/api/chores/complete-by-qr?token=<qr_token>
+        // Format 2: Deep link - familyhub://chore/<qr_token>
+        // Format 3: Raw token
+        let qrToken = result.ScanResult
+
+        // Try to extract token from URL query parameter
+        try {
+          const url = new URL(result.ScanResult)
+          console.log('[Scanner] Parsed as URL, searchParams:', url.searchParams.toString())
+          const tokenParam = url.searchParams.get('token')
+          if (tokenParam) {
+            qrToken = tokenParam
+            console.log('[Scanner] Extracted token from URL:', qrToken)
+          }
+        } catch {
+          // Not a URL, check for deep link format
+          if (result.ScanResult.startsWith('familyhub://chore/')) {
+            qrToken = result.ScanResult.replace('familyhub://chore/', '')
+            console.log('[Scanner] Extracted token from deep link:', qrToken)
+          } else {
+            console.log('[Scanner] Using raw value as token:', qrToken)
+          }
         }
 
+        console.log('[Scanner] Final token to send:', qrToken)
         lastScanResult.value = { type: 'qr', value: qrToken }
+        isScanning.value = false
         return lastScanResult.value
       }
 
-      return null
-    } catch (e) {
-      console.error('QR scan failed:', e)
-      error.value = 'QR scanning failed'
-      return null
-    } finally {
       isScanning.value = false
+      return null
+    } catch (e: any) {
+      console.error('QR scan failed:', e)
+      error.value = e.message || 'QR scanning failed'
+      isScanning.value = false
+      return null
     }
   }
 
-  // Stop QR scanning
+  // Stop QR scanning - not needed for this plugin as it uses native UI
   async function stopQrScan() {
-    if (!isNative.value) return
-
-    try {
-      const { BarcodeScanner } = await import('@capacitor-mlkit/barcode-scanning')
-      await BarcodeScanner.stopScan()
-    } catch (e) {
-      console.warn('Failed to stop scan:', e)
-    } finally {
-      isScanning.value = false
-    }
+    isScanning.value = false
   }
 
   // Start NFC scanning
@@ -135,28 +134,36 @@ export function useScanner() {
       })
 
       return new Promise((resolve) => {
-        const listener = CapacitorNfc.addListener('nfcEvent', async (event) => {
+        let listenerHandle: { remove: () => Promise<void> } | null = null
+
+        CapacitorNfc.addListener('nfcEvent', async (event) => {
           if (event.tag?.id) {
             await vibrate('light')
-            
+
             // Convert tag ID to hex string
             const tagId = Array.from(event.tag.id)
               .map((b: number) => b.toString(16).padStart(2, '0'))
               .join('')
 
             lastScanResult.value = { type: 'nfc', value: tagId }
-            
-            await listener.remove()
+
+            if (listenerHandle) {
+              await listenerHandle.remove()
+            }
             await CapacitorNfc.stopScanning()
             isScanning.value = false
-            
+
             resolve(lastScanResult.value)
           }
+        }).then((handle) => {
+          listenerHandle = handle
         })
 
         // Timeout after 30 seconds
         setTimeout(async () => {
-          await listener.remove()
+          if (listenerHandle) {
+            await listenerHandle.remove()
+          }
           await CapacitorNfc.stopScanning()
           isScanning.value = false
           resolve(null)
@@ -186,19 +193,28 @@ export function useScanner() {
 
   // Complete chore by QR token
   async function completeByQr(token: string): Promise<CompletionResult> {
+    console.log('[Scanner] completeByQr called with token:', token)
     try {
-      const response = await $fetch(apiUrl('/api/chores/complete-by-qr'), {
+      const url = apiUrl('/api/chores/complete-by-qr')
+      const headers = getAuthHeaders()
+      console.log('[Scanner] API URL:', url)
+      console.log('[Scanner] Headers:', JSON.stringify(headers))
+      
+      const response = await $fetch<CompletionApiResponse | CompletionApiError>(url, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers,
         body: { token },
       })
 
+      console.log('[Scanner] API Response:', JSON.stringify(response))
+
       if ('error' in response) {
+        console.log('[Scanner] API returned error:', response.error)
         await vibrate('error')
         return {
           success: false,
           error: response.error,
-          cooldownEndsAt: (response as any).cooldownEndsAt,
+          cooldownEndsAt: response.cooldownEndsAt,
         }
       }
 
@@ -208,8 +224,9 @@ export function useScanner() {
         choreName: response.data.choreName,
         pointsEarned: response.data.pointsEarned,
       }
-    } catch (e) {
-      console.error('QR completion failed:', e)
+    } catch (e: any) {
+      console.error('[Scanner] QR completion failed:', e)
+      console.error('[Scanner] Error details:', e.message, e.data)
       await vibrate('error')
       return { success: false, error: 'Failed to complete chore' }
     }
@@ -218,7 +235,7 @@ export function useScanner() {
   // Complete chore by NFC tag ID
   async function completeByNfc(tagId: string): Promise<CompletionResult> {
     try {
-      const response = await $fetch(apiUrl('/api/chores/complete-by-nfc'), {
+      const response = await $fetch<CompletionApiResponse | CompletionApiError>(apiUrl('/api/chores/complete-by-nfc'), {
         method: 'POST',
         headers: getAuthHeaders(),
         body: { tagId },
@@ -229,7 +246,7 @@ export function useScanner() {
         return {
           success: false,
           error: response.error,
-          cooldownEndsAt: (response as any).cooldownEndsAt,
+          cooldownEndsAt: response.cooldownEndsAt,
         }
       }
 
