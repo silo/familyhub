@@ -10,6 +10,13 @@ export default defineNuxtConfig({
   // Disable SSR for Capacitor mobile app compatibility
   ssr: false,
 
+  // NuxtUI theme configuration - register dynamic colors
+  ui: {
+    theme: {
+      colors: ['primary', 'secondary', 'info', 'success', 'warning', 'error', 'neutral'],
+    },
+  },
+
   runtimeConfig: {
     databaseUrl: process.env.DATABASE_URL,
     public: {

@@ -38,9 +38,28 @@ export interface Settings {
   id: number
   currency: string
   pointValue: string
+  qrBaseUrl?: string | null
+  // Theme settings
+  primaryColor: string
+  neutralColor: string
+  radius: string
+  colorMode: 'light' | 'dark' | 'system'
   createdAt: Date
   updatedAt: Date
 }
+
+// Re-export theme constants from shared module
+export {
+  PRIMARY_COLORS,
+  NEUTRAL_COLORS,
+  RADIUS_VALUES,
+  COLOR_MODES,
+  DEFAULT_THEME,
+  type PrimaryColor,
+  type NeutralColor,
+  type RadiusValue,
+  type ColorMode,
+} from '~~/shared/theme'
 
 export interface FamilyMember {
   id: number

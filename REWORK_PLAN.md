@@ -48,14 +48,14 @@ Transform FamilyHub from a shared tablet app to a multi-user system with individ
 - [x] Auto-generate `qr_token` (UUID) when creating chores
 - [x] Add `qr_token` to chore creation API
 - [x] Add `nfc_tag_id` update endpoint for binding NFC tags
-- [ ] Add QR token regeneration endpoint (optional security feature)
+- [ ] Add QR token regeneration endpoint (optional security feature) — *v2*
 
 ### Admin UI
 
-- [ ] Update `settings/chores.vue` with QR code display (using qrcode library)
-- [ ] Add print button for individual chore QR codes
-- [ ] Add NFC bind/unbind controls in chore edit form
-- [ ] Show NFC tag status (bound/unbound) in chore list
+- [x] Update `settings/chores.vue` with QR code display (using qrcode library)
+- [x] Add print button for individual chore QR codes
+- [ ] Add NFC bind/unbind controls in chore edit form — *v2*
+- [ ] Show NFC tag status (bound/unbound) in chore list — *v2*
 
 ## Phase 3: Scan-to-Complete API
 
@@ -70,17 +70,17 @@ Transform FamilyHub from a shared tablet app to a multi-user system with individ
 
 - [x] Set `ssr: false` in `nuxt.config.ts`
 - [x] Create `capacitor.config.ts`
-- [ ] Run `npx cap add ios` (requires Xcode)
-- [ ] Run `npx cap add android` (requires Android Studio)
+- [ ] Run `npx cap add ios` (requires Xcode) — *v2*
+- [x] Run `npx cap add android` (requires Android Studio)
 
 ### Native Plugins
 
 - [x] Install `@capacitor-mlkit/barcode-scanning` for QR
-- [x] Install `@capgo/capacitor-nfc` for NFC
+- [x] Install `@capgo/capacitor-nfc` for NFC — *v2: not yet functional*
 - [x] Install `@capacitor/haptics` for feedback
 - [x] Install `@capacitor/preferences` for session storage
-- [ ] Configure Android permissions (camera, NFC)
-- [ ] Configure iOS permissions (camera, NFC) + capabilities
+- [x] Configure Android permissions (camera, NFC)
+- [ ] Configure iOS permissions (camera, NFC) + capabilities — *v2*
 
 ## Phase 5: Mobile App UI
 
@@ -116,15 +116,15 @@ Transform FamilyHub from a shared tablet app to a multi-user system with individ
 
 ### Family Member Management
 
-- [ ] Add password set/change field per family member
-- [ ] Show "has password" indicator in member list
-- [ ] Password strength validation
+- [x] Add password set/change field per family member
+- [x] Show "has password" indicator in member list
+- [x] Password strength validation
 
 ### Security Settings
 
 - [x] Remove PIN option entirely
 - [x] Keep admin password change functionality
-- [ ] Add session management (view active sessions, revoke)
+- [ ] Add session management (view active sessions, revoke) — *v2*
 
 ## Technical Details
 

@@ -65,25 +65,26 @@ const navItems = [
   { label: 'Categories', to: '/settings/categories', icon: 'i-lucide-folder' },
   { label: 'Chores', to: '/settings/chores', icon: 'i-lucide-list-checks' },
   { label: 'Points', to: '/settings/points', icon: 'i-lucide-coins' },
+  { label: 'Theme', to: '/settings/theme', icon: 'i-lucide-palette' },
   { label: 'Security', to: '/settings/security', icon: 'i-lucide-shield' },
   { label: 'Backup', to: '/settings/backup', icon: 'i-lucide-download' },
 ]
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+  <div class="min-h-screen bg-muted">
     <!-- Auth Modal/Overlay -->
     <div
       v-if="!isAuthenticated || isTimedOut"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/80 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-inverted/80 backdrop-blur-sm"
     >
       <UCard class="w-full max-w-sm">
         <template #header>
           <div class="text-center">
-            <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+            <h2 class="text-xl font-bold text-highlighted">
               Settings Access
             </h2>
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            <p class="mt-1 text-sm text-muted">
               {{ isTimedOut && isAuthenticated ? 'Session timed out' : 'Enter password to continue' }}
             </p>
           </div>
@@ -134,10 +135,10 @@ const navItems = [
     <!-- Settings Content (visible when authenticated) -->
     <div v-show="isAuthenticated && !isTimedOut" class="flex min-h-screen">
       <!-- Sidebar -->
-      <aside class="w-64 border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+      <aside class="w-64 border-r border-default bg-default">
         <div class="flex h-full flex-col">
           <!-- Header -->
-          <div class="border-b border-gray-200 p-4 dark:border-gray-800">
+          <div class="border-b border-default p-4">
             <div class="flex items-center gap-2">
               <UButton
                 to="/dashboard"
@@ -146,7 +147,7 @@ const navItems = [
                 icon="i-lucide-arrow-left"
                 size="sm"
               />
-              <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
+              <h1 class="text-lg font-semibold text-highlighted">
                 Settings
               </h1>
             </div>
@@ -158,7 +159,7 @@ const navItems = [
               v-for="item in navItems"
               :key="item.to"
               :to="item.to"
-              class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+              class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-elevated"
               active-class="bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400"
             >
               <UIcon :name="item.icon" class="size-5" />
@@ -167,8 +168,8 @@ const navItems = [
           </nav>
 
           <!-- Footer -->
-          <div class="border-t border-gray-200 p-4 dark:border-gray-800">
-            <p class="text-xs text-gray-500 dark:text-gray-400">
+          <div class="border-t border-default p-4">
+            <p class="text-xs text-dimmed">
               FamilyHub v{{ version }}
             </p>
           </div>

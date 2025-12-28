@@ -23,6 +23,11 @@ export const settings = pgTable('settings', {
   currency: varchar('currency', { length: 3 }).notNull().default('USD'),
   pointValue: decimal('point_value', { precision: 10, scale: 2 }).notNull().default('1.00'),
   qrBaseUrl: varchar('qr_base_url', { length: 500 }),
+  // Theme settings
+  primaryColor: varchar('primary_color', { length: 20 }).notNull().default('indigo'),
+  neutralColor: varchar('neutral_color', { length: 20 }).notNull().default('slate'),
+  radius: decimal('radius', { precision: 4, scale: 3 }).notNull().default('0.25'),
+  colorMode: varchar('color_mode', { length: 10 }).notNull().default('system'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
