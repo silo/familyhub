@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import type { Chore, Category, FamilyMember } from '~/types'
+import QRCode from 'qrcode'
 
 definePageMeta({
   layout: 'settings',
 })
+
+const toast = useToast()
+const config = useRuntimeConfig()
 
 // Fetch data
 const { data: choresData, refresh: refreshChores } = await useFetch('/api/chores')
@@ -30,6 +34,13 @@ const isModalOpen = ref(false)
 const editingChore = ref<(Chore & { category?: Category | null; assignee?: FamilyMember | null }) | null>(null)
 const isDeleteModalOpen = ref(false)
 const deletingChore = ref<Chore | null>(null)
+
+// QR/NFC modal state
+const isQrNfcModalOpen = ref(false)
+const selectedChoreForQrNfc = ref<(Chore & { qrToken?: string | null; nfcTagId?: string | null }) | null>(null)
+const qrCodeDataUrl = ref<string | null>(null)
+const nfcTagInput = ref('')
+const nfcLoading = ref(false)
 
 // Form state
 const form = reactive({
@@ -239,6 +250,186 @@ function getChoreTypeBadgeColor(chore: Chore) {
   if (chore.recurringType) return 'info'
   return 'neutral'
 }
+
+// QR/NFC Management functions
+async function openQrNfcModal(chore: typeof allChores.value[0]) {
+  selectedChoreForQrNfc.value = chore
+  nfcTagInput.value = chore.nfcTagId || ''
+  
+  // Generate QR code if chore has a qrToken
+  if (chore.qrToken) {
+    try {
+      const apiBase = config.public.apiBase || window.location.origin
+      const qrData = `${apiBase}/api/chores/complete-by-qr?token=${chore.qrToken}`
+      qrCodeDataUrl.value = await QRCode.toDataURL(qrData, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#ffffff',
+        },
+      })
+    } catch (err) {
+      console.error('Failed to generate QR code:', err)
+      qrCodeDataUrl.value = null
+    }
+  } else {
+    qrCodeDataUrl.value = null
+  }
+  
+  isQrNfcModalOpen.value = true
+}
+
+function closeQrNfcModal() {
+  isQrNfcModalOpen.value = false
+  selectedChoreForQrNfc.value = null
+  qrCodeDataUrl.value = null
+  nfcTagInput.value = ''
+}
+
+function printQrCode() {
+  if (!qrCodeDataUrl.value || !selectedChoreForQrNfc.value) return
+  
+  const printWindow = window.open('', '_blank')
+  if (!printWindow) {
+    toast.add({
+      title: 'Error',
+      description: 'Could not open print window. Please allow popups.',
+      icon: 'i-lucide-alert-circle',
+      color: 'error',
+    })
+    return
+  }
+  
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>QR Code - ${selectedChoreForQrNfc.value.title}</title>
+      <style>
+        body {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          margin: 0;
+          font-family: system-ui, sans-serif;
+        }
+        h1 {
+          font-size: 24px;
+          margin-bottom: 16px;
+        }
+        p {
+          color: #666;
+          margin-bottom: 24px;
+        }
+        img {
+          max-width: 300px;
+        }
+        @media print {
+          body { padding: 20mm; }
+        }
+      </style>
+    </head>
+    <body>
+      <h1>${selectedChoreForQrNfc.value.title}</h1>
+      <p>${selectedChoreForQrNfc.value.points} points</p>
+      <img src="${qrCodeDataUrl.value}" alt="QR Code" />
+      <p style="margin-top: 16px; font-size: 12px;">Scan to complete chore</p>
+    </body>
+    </html>
+  `)
+  printWindow.document.close()
+  printWindow.print()
+}
+
+async function bindNfcTag() {
+  if (!selectedChoreForQrNfc.value || !nfcTagInput.value.trim()) return
+  
+  nfcLoading.value = true
+  
+  try {
+    const response = await $fetch(`/api/chores/${selectedChoreForQrNfc.value.id}/nfc`, {
+      method: 'PUT',
+      body: { nfcTagId: nfcTagInput.value.trim() },
+    })
+    
+    if ('error' in response) {
+      toast.add({
+        title: 'Error',
+        description: response.error,
+        icon: 'i-lucide-alert-circle',
+        color: 'error',
+      })
+    } else {
+      toast.add({
+        title: 'Success',
+        description: 'NFC tag bound successfully',
+        icon: 'i-lucide-check-circle',
+        color: 'success',
+      })
+      await refreshChores()
+      // Update local state
+      if (selectedChoreForQrNfc.value) {
+        selectedChoreForQrNfc.value.nfcTagId = nfcTagInput.value.trim()
+      }
+    }
+  } catch (err) {
+    toast.add({
+      title: 'Error',
+      description: 'Failed to bind NFC tag',
+      icon: 'i-lucide-alert-circle',
+      color: 'error',
+    })
+  } finally {
+    nfcLoading.value = false
+  }
+}
+
+async function unbindNfcTag() {
+  if (!selectedChoreForQrNfc.value) return
+  
+  nfcLoading.value = true
+  
+  try {
+    const response = await $fetch(`/api/chores/${selectedChoreForQrNfc.value.id}/nfc`, {
+      method: 'PUT',
+      body: { nfcTagId: null },
+    })
+    
+    if ('error' in response) {
+      toast.add({
+        title: 'Error',
+        description: response.error,
+        icon: 'i-lucide-alert-circle',
+        color: 'error',
+      })
+    } else {
+      toast.add({
+        title: 'Success',
+        description: 'NFC tag unbound',
+        icon: 'i-lucide-check-circle',
+        color: 'success',
+      })
+      await refreshChores()
+      // Update local state
+      if (selectedChoreForQrNfc.value) {
+        selectedChoreForQrNfc.value.nfcTagId = null
+        nfcTagInput.value = ''
+      }
+    }
+  } catch (err) {
+    toast.add({
+      title: 'Error',
+      description: 'Failed to unbind NFC tag',
+      icon: 'i-lucide-alert-circle',
+      color: 'error',
+    })
+  } finally {
+    nfcLoading.value = false
+  }
+}
 </script>
 
 <template>
@@ -298,10 +489,26 @@ function getChoreTypeBadgeColor(chore: Chore) {
                 <UIcon name="i-lucide-calendar" class="size-3" />
                 {{ chore.dueDate }}
               </span>
+              <span v-if="chore.qrToken" class="flex items-center gap-1 text-primary-600">
+                <UIcon name="i-lucide-qr-code" class="size-3" />
+                QR
+              </span>
+              <span v-if="chore.nfcTagId" class="flex items-center gap-1 text-success-600">
+                <UIcon name="i-lucide-nfc" class="size-3" />
+                NFC
+              </span>
             </div>
           </div>
 
           <div class="flex gap-2">
+            <UButton
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-qr-code"
+              size="sm"
+              title="QR/NFC Settings"
+              @click="openQrNfcModal(chore)"
+            />
             <UButton
               color="neutral"
               variant="ghost"
@@ -550,6 +757,130 @@ function getChoreTypeBadgeColor(chore: Chore) {
                 @click="handleDelete"
               >
                 Delete
+              </UButton>
+            </div>
+          </template>
+        </UCard>
+      </template>
+    </UModal>
+
+    <!-- QR/NFC Management Modal -->
+    <UModal
+      v-model:open="isQrNfcModalOpen"
+      :title="`QR/NFC - ${selectedChoreForQrNfc?.title || 'Chore'}`"
+      description="Manage QR code and NFC tag for this chore"
+    >
+      <template #content>
+        <UCard>
+          <template #header>
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-semibold">
+                QR Code & NFC Tag
+              </h3>
+              <UButton
+                color="neutral"
+                variant="ghost"
+                icon="i-lucide-x"
+                @click="closeQrNfcModal"
+              />
+            </div>
+          </template>
+
+          <div class="space-y-6">
+            <!-- QR Code Section -->
+            <div>
+              <h4 class="mb-3 flex items-center gap-2 font-medium text-gray-900 dark:text-white">
+                <UIcon name="i-lucide-qr-code" class="size-5" />
+                QR Code
+              </h4>
+              
+              <div v-if="qrCodeDataUrl" class="flex flex-col items-center gap-4">
+                <div class="rounded-lg border bg-white p-4">
+                  <img :src="qrCodeDataUrl" alt="QR Code" class="h-48 w-48" />
+                </div>
+                <p class="text-center text-sm text-gray-500">
+                  Scan this QR code to complete the chore
+                </p>
+                <UButton
+                  icon="i-lucide-printer"
+                  variant="outline"
+                  @click="printQrCode"
+                >
+                  Print QR Code
+                </UButton>
+              </div>
+              
+              <div v-else class="rounded-lg border-2 border-dashed border-gray-300 p-6 text-center dark:border-gray-700">
+                <UIcon name="i-lucide-alert-circle" class="mx-auto size-8 text-gray-400" />
+                <p class="mt-2 text-sm text-gray-500">
+                  No QR token generated for this chore.
+                </p>
+              </div>
+            </div>
+
+            <USeparator />
+
+            <!-- NFC Section -->
+            <div>
+              <h4 class="mb-3 flex items-center gap-2 font-medium text-gray-900 dark:text-white">
+                <UIcon name="i-lucide-nfc" class="size-5" />
+                NFC Tag
+              </h4>
+              
+              <div v-if="selectedChoreForQrNfc?.nfcTagId" class="space-y-3">
+                <div class="flex items-center gap-2 rounded-lg bg-success-50 p-3 dark:bg-success-900/20">
+                  <UIcon name="i-lucide-check-circle" class="size-5 text-success-600" />
+                  <div class="flex-1">
+                    <p class="text-sm font-medium text-success-800 dark:text-success-200">
+                      NFC tag bound
+                    </p>
+                    <p class="font-mono text-xs text-success-600">
+                      {{ selectedChoreForQrNfc.nfcTagId }}
+                    </p>
+                  </div>
+                </div>
+                <UButton
+                  color="error"
+                  variant="soft"
+                  icon="i-lucide-unlink"
+                  :loading="nfcLoading"
+                  @click="unbindNfcTag"
+                >
+                  Unbind NFC Tag
+                </UButton>
+              </div>
+              
+              <div v-else class="space-y-3">
+                <p class="text-sm text-gray-500">
+                  Enter the NFC tag ID to bind it to this chore. You can find this ID by scanning the tag with your mobile app.
+                </p>
+                <div class="flex gap-2">
+                  <UInput
+                    v-model="nfcTagInput"
+                    placeholder="Enter NFC tag ID..."
+                    class="flex-1"
+                  />
+                  <UButton
+                    icon="i-lucide-link"
+                    :loading="nfcLoading"
+                    :disabled="!nfcTagInput.trim()"
+                    @click="bindNfcTag"
+                  >
+                    Bind
+                  </UButton>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <template #footer>
+            <div class="flex justify-end">
+              <UButton
+                color="neutral"
+                variant="outline"
+                @click="closeQrNfcModal"
+              >
+                Close
               </UButton>
             </div>
           </template>

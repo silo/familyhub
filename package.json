@@ -11,7 +11,16 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "cap:sync": "nuxt build && cap sync",
+    "cap:sync:ios": "nuxt build && cap sync ios",
+    "cap:sync:android": "nuxt build && cap sync android",
+    "cap:open:ios": "cap open ios",
+    "cap:open:android": "cap open android",
+    "cap:run:ios": "cap run ios",
+    "cap:run:android": "cap run android",
+    "ios": "nuxt build && cap sync ios && cap open ios",
+    "android": "nuxt build && cap sync android && cap open android"
   },
   "dependencies": {
     "@capacitor-mlkit/barcode-scanning": "^8.0.0",

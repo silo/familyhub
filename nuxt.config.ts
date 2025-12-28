@@ -26,6 +26,28 @@ export default defineNuxtConfig({
     },
   },
 
+  // For Capacitor: generate static files to dist folder
+  nitro: {
+    output: {
+      publicDir: '.output/public',
+    },
+    prerender: {
+      // Generate index.html for SPA fallback
+      routes: ['/', '/mobile', '/mobile/setup', '/mobile/login', '/mobile/scan', '/mobile/chores', '/mobile/profile'],
+    },
+    // Enable CORS for mobile app development
+    routeRules: {
+      '/api/**': {
+        cors: true,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
+      },
+    },
+  },
+
   future: {
     compatibilityVersion: 4,
   },

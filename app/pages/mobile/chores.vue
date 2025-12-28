@@ -5,6 +5,7 @@ definePageMeta({
 })
 
 const { user, isAuthenticated, loadSession, isLoading, getAuthHeaders } = useMobileAuth()
+const { apiUrl } = useMobileConfig()
 
 // Check authentication
 onMounted(async () => {
@@ -15,7 +16,7 @@ onMounted(async () => {
 })
 
 // Fetch chores
-const { data: choresResponse, refresh: refreshChores } = await useFetch('/api/chores', {
+const { data: choresResponse, refresh: refreshChores } = await useFetch(() => apiUrl('/api/chores'), {
   headers: getAuthHeaders(),
   watch: [user],
 })

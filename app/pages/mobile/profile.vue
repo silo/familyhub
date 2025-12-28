@@ -5,6 +5,7 @@ definePageMeta({
 })
 
 const { user, isAuthenticated, logout, loadSession, isLoading, getAuthHeaders } = useMobileAuth()
+const { serverUrl, clearConfig, apiUrl } = useMobileConfig()
 
 // Check authentication
 onMounted(async () => {
@@ -16,7 +17,7 @@ onMounted(async () => {
 
 // Fetch points for current user
 const { data: pointsData, refresh: refreshPoints } = await useFetch(() => 
-  user.value ? `/api/points/history/${user.value.id}` : null,
+  user.value ? apiUrl(`/api/points/history/${user.value.id}`) : null,
   {
     headers: getAuthHeaders(),
     watch: [user],
@@ -32,6 +33,13 @@ const totalPoints = computed(() => {
 async function handleLogout() {
   await logout()
   await navigateTo('/mobile/login')
+}
+
+// Change server
+async function handleChangeServer() {
+  await logout()
+  await clearConfig()
+  await navigateTo('/mobile/setup')
 }
 
 function getAvatarUrl() {
@@ -111,6 +119,19 @@ function getAvatarUrl() {
           >
             Logout
           </UButton>
+        </div>
+
+        <!-- Server Info -->
+        <div class="mt-6 rounded-lg bg-gray-100 p-4 dark:bg-gray-800">
+          <p class="text-xs text-gray-500 dark:text-gray-400">Connected to:</p>
+          <p class="text-sm font-mono text-gray-700 dark:text-gray-300">{{ serverUrl }}</p>
+          <button
+            type="button"
+            class="mt-2 text-xs text-primary hover:underline"
+            @click="handleChangeServer"
+          >
+            Change Server
+          </button>
         </div>
       </main>
 

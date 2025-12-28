@@ -5,21 +5,14 @@ const config: CapacitorConfig = {
   appName: 'FamilyHub',
   webDir: '.output/public',
   server: {
-    // For development, point to your local server
-    // url: 'http://192.168.1.x:3000',
-    // cleartext: true,
+    // Use HTTP to allow connections to local dev servers
+    androidScheme: 'http',
   },
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,
       backgroundColor: '#ffffff',
       showSpinner: false,
-    },
-    CapacitorNfc: {
-      // NFC configuration
-    },
-    BarcodeScanner: {
-      // MLKit Barcode Scanner configuration
     },
   },
   ios: {

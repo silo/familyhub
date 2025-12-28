@@ -22,6 +22,7 @@ interface Session {
 }
 
 export function useMobileAuth() {
+  const { apiUrl } = useMobileConfig()
   const user = useState<User | null>('mobile-user', () => null)
   const token = useState<string | null>('mobile-token', () => null)
   const isAuthenticated = computed(() => !!token.value && !!user.value)
@@ -85,7 +86,7 @@ export function useMobileAuth() {
     deviceName?: string
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const response = await $fetch('/api/auth/login', {
+      const response = await $fetch(apiUrl('/api/auth/login'), {
         method: 'POST',
         body: {
           familyMemberId,
@@ -115,7 +116,7 @@ export function useMobileAuth() {
   async function logout(): Promise<{ success: boolean; error?: string }> {
     try {
       if (token.value) {
-        await $fetch('/api/auth/logout', {
+        await $fetch(apiUrl('/api/auth/logout'), {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token.value}`,
@@ -143,7 +144,7 @@ export function useMobileAuth() {
     if (!token.value) return
 
     try {
-      const response = await $fetch('/api/auth/me', {
+      const response = await $fetch(apiUrl('/api/auth/me'), {
         headers: getAuthHeaders(),
       })
 

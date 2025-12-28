@@ -23,6 +23,7 @@ export function useScanner() {
   const error = ref<string | null>(null)
 
   const { getAuthHeaders } = useMobileAuth()
+  const { apiUrl } = useMobileConfig()
 
   // Check if running on native platform
   const isNative = computed(() => Capacitor.isNativePlatform())
@@ -186,7 +187,7 @@ export function useScanner() {
   // Complete chore by QR token
   async function completeByQr(token: string): Promise<CompletionResult> {
     try {
-      const response = await $fetch('/api/chores/complete-by-qr', {
+      const response = await $fetch(apiUrl('/api/chores/complete-by-qr'), {
         method: 'POST',
         headers: getAuthHeaders(),
         body: { token },
@@ -217,7 +218,7 @@ export function useScanner() {
   // Complete chore by NFC tag ID
   async function completeByNfc(tagId: string): Promise<CompletionResult> {
     try {
-      const response = await $fetch('/api/chores/complete-by-nfc', {
+      const response = await $fetch(apiUrl('/api/chores/complete-by-nfc'), {
         method: 'POST',
         headers: getAuthHeaders(),
         body: { tagId },

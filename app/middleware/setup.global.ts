@@ -1,5 +1,12 @@
 // app/middleware/setup.global.ts
+import { Capacitor } from '@capacitor/core'
+
 export default defineNuxtRouteMiddleware(async (to) => {
+  // Skip middleware for mobile app routes - mobile handles its own setup flow
+  if (Capacitor.isNativePlatform() || to.path.startsWith('/mobile')) {
+    return
+  }
+
   // Skip middleware for setup page
   if (to.path === '/setup') {
     return

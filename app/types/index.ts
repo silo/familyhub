@@ -76,6 +76,8 @@ export interface Chore {
   endDate: string | null
   cooldownType: string | null
   cooldownHours: number | null
+  qrToken: string | null
+  nfcTagId: string | null
   deletedAt: Date | null
   createdAt: Date
   updatedAt: Date
