@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1765442499394,
-      "tag": "0000_pale_snowbird",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1735335600000,
-      "tag": "0001_user-auth-qr-nfc",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1766938824175,
-      "tag": "0002_mysterious_clea",
+      "when": 1767042122344,
+      "tag": "0000_mean_adam_destine",
       "breakpoints": true
     }
   ]
