@@ -10,7 +10,7 @@ interface Props {
   onCooldown?: boolean
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   isOverdue: false,
   onCooldown: false,
 })
@@ -74,15 +74,11 @@ function getDiceBearUrl(seed: string) {
 
     <!-- Points -->
     <div v-if="chore.points > 0" class="flex-shrink-0">
-      <UBadge color="warning" variant="subtle" size="xs">
-        {{ chore.points }} pts
-      </UBadge>
+      <UBadge color="warning" variant="subtle" size="xs"> {{ chore.points }} pts </UBadge>
     </div>
 
     <!-- Overdue Badge -->
-    <UBadge v-if="isOverdue" color="error" variant="subtle" size="xs">
-      Overdue
-    </UBadge>
+    <UBadge v-if="isOverdue" color="error" variant="subtle" size="xs"> Overdue </UBadge>
 
     <!-- Complete Button -->
     <UButton

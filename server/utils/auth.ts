@@ -1,5 +1,5 @@
 // server/utils/auth.ts
-import { H3Event } from 'h3'
+import type { H3Event } from 'h3'
 import { db } from '../db'
 import { userSessions, familyMembers } from '../db/schema'
 import { eq, and, gt } from 'drizzle-orm'

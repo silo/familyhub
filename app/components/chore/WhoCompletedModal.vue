@@ -2,7 +2,7 @@
 // Modal for selecting who completed an unassigned chore
 import type { FamilyMember } from '~/types'
 
-const props = defineProps<{
+defineProps<{
   open: boolean
   choreName: string
   chorePoints: number
@@ -29,18 +29,23 @@ function getDiceBearUrl(seed: string) {
 </script>
 
 <template>
-  <UModal 
-    :open="open" 
+  <UModal
+    :open="open"
     title="Who completed this chore?"
     :description="`Select who completed ${choreName}`"
-    @update:open="(val) => !val && emit('close')"
+    @update:open="val => !val && emit('close')"
   >
     <template #content>
       <UCard>
         <template #header>
           <div class="flex items-center gap-3">
-            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
-              <UIcon name="i-heroicons-user-group" class="w-5 h-5 text-primary-600 dark:text-primary-400" />
+            <div
+              class="flex-shrink-0 w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center"
+            >
+              <UIcon
+                name="i-heroicons-user-group"
+                class="w-5 h-5 text-primary-600 dark:text-primary-400"
+              />
             </div>
             <div>
               <h3 class="text-lg font-semibold">Who completed this?</h3>
@@ -66,7 +71,7 @@ function getDiceBearUrl(seed: string) {
             @click="selectMember(member.id)"
           >
             <!-- Avatar -->
-            <div 
+            <div
               class="w-16 h-16 rounded-full overflow-hidden ring-2 ring-offset-2"
               :style="{ '--tw-ring-color': member.color }"
             >
@@ -75,15 +80,15 @@ function getDiceBearUrl(seed: string) {
                 :src="member.avatarValue"
                 :alt="member.name"
                 class="w-full h-full object-cover"
-              >
+              />
               <img
                 v-else
                 :src="getDiceBearUrl(member.avatarValue)"
                 :alt="member.name"
                 class="w-full h-full"
-              >
+              />
             </div>
-            
+
             <!-- Name -->
             <span class="font-medium text-sm">{{ member.name }}</span>
           </button>
@@ -91,13 +96,7 @@ function getDiceBearUrl(seed: string) {
 
         <template #footer>
           <div class="flex justify-end">
-            <UButton
-              variant="ghost"
-              color="neutral"
-              @click="emit('close')"
-            >
-              Cancel
-            </UButton>
+            <UButton variant="ghost" color="neutral" @click="emit('close')"> Cancel </UButton>
           </div>
         </template>
       </UCard>

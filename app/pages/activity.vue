@@ -1,7 +1,9 @@
 <script setup lang="ts">
 // Activity log page
+import { formatRelativeDate } from '~/utils/date'
+
 definePageMeta({
-  layout: 'default'
+  layout: 'default',
 })
 
 interface ActivityEntry {
@@ -22,35 +24,14 @@ interface ActivityEntry {
 }
 
 // Fetch activity data
-const { data: activityData, status } = await useFetch<{ data: ActivityEntry[] }>('/api/activity')
+const { data: activityData, status } = await useFetch<{
+  data: ActivityEntry[]
+}>('/api/activity')
 
 const activities = computed(() => activityData.value?.data || [])
 
-function formatTimestamp(dateString: string) {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMinutes = Math.floor(diffMs / (1000 * 60))
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-
-  if (diffMinutes < 1) {
-    return 'Just now'
-  } else if (diffMinutes < 60) {
-    return `${diffMinutes}m ago`
-  } else if (diffHours < 24) {
-    return `${diffHours}h ago`
-  } else if (diffDays < 7) {
-    return `${diffDays}d ago`
-  } else {
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit'
-    })
-  }
-}
+// Use centralized date formatting
+const formatTimestamp = formatRelativeDate
 
 function getActivityIcon(type: string) {
   switch (type) {
@@ -84,16 +65,18 @@ function getActivityColor(type: string) {
 
 function getActivityDescription(activity: ActivityEntry) {
   const metadata = activity.metadata as Record<string, unknown> | null
-  
+
   switch (activity.type) {
-    case 'chore_completed':
+    case 'chore_completed': {
       const choreName = metadata?.choreName || activity.chore?.title || 'a chore'
       const points = metadata?.points as number
       return `Completed "${choreName}"${points ? ` (+${points} pts)` : ''}`
-    case 'points_redeemed':
+    }
+    case 'points_redeemed': {
       const amount = metadata?.amount as number
       const moneyValue = metadata?.moneyValue as string
       return `Redeemed ${amount} points${moneyValue ? ` for ${moneyValue}` : ''}`
+    }
     case 'member_added':
       return 'Joined the family'
     case 'chore_created':
@@ -113,7 +96,7 @@ const groupedActivities = computed(() => {
     const activityDate = new Date(activity.createdAt).toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     })
 
     if (activityDate !== currentDate) {
@@ -141,10 +124,8 @@ const groupedActivities = computed(() => {
     <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-4 py-4">
         <div class="flex items-center justify-between">
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-            Activity
-          </h1>
-          
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Activity</h1>
+
           <UButton
             to="/settings"
             variant="ghost"
@@ -172,22 +153,15 @@ const groupedActivities = computed(() => {
 
       <!-- Empty state -->
       <div v-else-if="activities.length === 0" class="text-center py-16">
-        <UIcon 
-          name="i-heroicons-clock" 
-          class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" 
+        <UIcon
+          name="i-heroicons-clock"
+          class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4"
         />
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-          No activity yet
-        </h2>
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">No activity yet</h2>
         <p class="text-gray-500 dark:text-gray-400 mb-6">
           Complete some chores to see your activity here!
         </p>
-        <UButton
-          to="/dashboard"
-          color="primary"
-        >
-          Go to Chores
-        </UButton>
+        <UButton to="/dashboard" color="primary"> Go to Chores </UButton>
       </div>
 
       <!-- Activity timeline -->
@@ -206,21 +180,18 @@ const groupedActivities = computed(() => {
               class="flex items-start gap-4 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm"
             >
               <!-- Activity icon -->
-              <div 
+              <div
                 class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
                 :class="getActivityColor(activity.type)"
               >
-                <UIcon 
-                  :name="getActivityIcon(activity.type)" 
-                  class="w-5 h-5" 
-                />
+                <UIcon :name="getActivityIcon(activity.type)" class="w-5 h-5" />
               </div>
 
               <!-- Content -->
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2">
                   <!-- Member avatar (if applicable) -->
-                  <div 
+                  <div
                     v-if="activity.familyMember"
                     class="w-6 h-6 rounded-full overflow-hidden ring-1"
                     :style="{ '--tw-ring-color': activity.familyMember.color }"
@@ -229,9 +200,9 @@ const groupedActivities = computed(() => {
                       :src="activity.familyMember.avatarUrl"
                       :alt="activity.familyMember.name"
                       class="w-full h-full object-cover"
-                    >
+                    />
                   </div>
-                  
+
                   <!-- Member name -->
                   <span v-if="activity.familyMember" class="font-medium text-sm">
                     {{ activity.familyMember.name }}
@@ -255,40 +226,6 @@ const groupedActivities = computed(() => {
     </main>
 
     <!-- Bottom navigation -->
-    <nav class="fixed bottom-0 inset-x-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 safe-area-pb">
-      <div class="max-w-7xl mx-auto px-4">
-        <div class="flex items-center justify-around py-2">
-          <NuxtLink
-            to="/dashboard"
-            class="flex flex-col items-center gap-1 px-4 py-2 rounded-lg text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-          >
-            <UIcon name="i-heroicons-home" class="w-6 h-6" />
-            <span class="text-xs font-medium">Home</span>
-          </NuxtLink>
-          
-          <NuxtLink
-            to="/points"
-            class="flex flex-col items-center gap-1 px-4 py-2 rounded-lg text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-          >
-            <UIcon name="i-heroicons-star" class="w-6 h-6" />
-            <span class="text-xs font-medium">Points</span>
-          </NuxtLink>
-          
-          <NuxtLink
-            to="/activity"
-            class="flex flex-col items-center gap-1 px-4 py-2 rounded-lg text-primary-600 dark:text-primary-400"
-          >
-            <UIcon name="i-heroicons-clock" class="w-6 h-6" />
-            <span class="text-xs font-medium">Activity</span>
-          </NuxtLink>
-        </div>
-      </div>
-    </nav>
+    <UiBottomNavigation />
   </div>
 </template>
-
-<style scoped>
-.safe-area-pb {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-</style>

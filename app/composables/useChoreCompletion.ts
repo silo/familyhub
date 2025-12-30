@@ -12,13 +12,15 @@ export function useChoreCompletion() {
   const toast = useToast()
   const showCelebration = ref(false)
   const lastCompletion = ref<CompletionResult | null>(null)
-  const undoTimeoutId = ref<NodeJS.Timeout | null>(null)
 
   async function completeChore(choreId: number, familyMemberId: number) {
     try {
-      const response = await $fetch<{ data?: CompletionResult; error?: string }>(`/api/chores/${choreId}/complete`, {
+      const response = await $fetch<{
+        data?: CompletionResult
+        error?: string
+      }>(`/api/chores/${choreId}/complete`, {
         method: 'POST',
-        body: { completedBy: familyMemberId }
+        body: { completedBy: familyMemberId },
       })
 
       // Check for error response
@@ -28,7 +30,7 @@ export function useChoreCompletion() {
           description: response.error || 'Failed to complete chore',
           icon: 'i-heroicons-exclamation-circle',
           color: 'warning',
-          duration: 3000
+          duration: 3000,
         })
         return null
       }
@@ -44,22 +46,27 @@ export function useChoreCompletion() {
         icon: 'i-heroicons-check-circle',
         color: 'success',
         duration: 5000,
-        actions: [{
-          label: 'Undo',
-          color: 'neutral',
-          variant: 'outline',
-          onClick: async () => { await undoCompletion(response.data!.completion.id) }
-        }]
+        actions: [
+          {
+            label: 'Undo',
+            color: 'neutral',
+            variant: 'outline',
+            onClick: async () => {
+              await undoCompletion(response.data!.completion.id)
+            },
+          },
+        ],
       })
 
       return response.data
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as any
       toast.add({
         title: 'Error',
-        description: error.data?.error || error.message || 'Failed to complete chore',
+        description: err.data?.error || err.message || 'Failed to complete chore',
         icon: 'i-heroicons-exclamation-circle',
         color: 'error',
-        duration: 3000
+        duration: 3000,
       })
       return null
     }
@@ -68,7 +75,7 @@ export function useChoreCompletion() {
   async function undoCompletion(completionId: number) {
     try {
       await $fetch(`/api/chores/completions/${completionId}/undo`, {
-        method: 'POST'
+        method: 'POST',
       })
 
       toast.remove(`completion-${completionId}`)
@@ -77,18 +84,19 @@ export function useChoreCompletion() {
         description: 'Chore completion has been reversed',
         icon: 'i-heroicons-arrow-uturn-left',
         color: 'neutral',
-        duration: 2000
+        duration: 2000,
       })
 
       lastCompletion.value = null
       return true
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as any
       toast.add({
         title: 'Cannot undo',
-        description: error.data?.message || 'Undo window has expired',
+        description: err.data?.message || 'Undo window has expired',
         icon: 'i-heroicons-exclamation-circle',
         color: 'warning',
-        duration: 3000
+        duration: 3000,
       })
       return false
     }
@@ -98,18 +106,11 @@ export function useChoreCompletion() {
     showCelebration.value = false
   }
 
-  // Clean up timeout on unmount
-  onUnmounted(() => {
-    if (undoTimeoutId.value) {
-      clearTimeout(undoTimeoutId.value)
-    }
-  })
-
   return {
     showCelebration,
     lastCompletion,
     completeChore,
     undoCompletion,
-    onCelebrationComplete
+    onCelebrationComplete,
   }
 }

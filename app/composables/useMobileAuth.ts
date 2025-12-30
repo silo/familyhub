@@ -5,7 +5,6 @@ import { Preferences } from '@capacitor/preferences'
 import type { MobileUser, MobileSession, LoginResponse, MeResponse } from '~/types'
 
 const SESSION_KEY = 'familyhub_session'
-const USER_KEY = 'familyhub_user'
 
 export function useMobileAuth() {
   const { apiUrl } = useMobileConfig()
@@ -21,7 +20,7 @@ export function useMobileAuth() {
       const { value: sessionJson } = await Preferences.get({ key: SESSION_KEY })
       if (sessionJson) {
         const session: MobileSession = JSON.parse(sessionJson)
-        
+
         // Check if session is expired
         if (new Date(session.expiresAt) > new Date()) {
           token.value = session.token

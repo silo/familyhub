@@ -66,7 +66,7 @@ onMounted(async () => {
         </div>
 
         <!-- Form -->
-        <form @submit.prevent="handleSubmit" class="space-y-6">
+        <form class="space-y-6" @submit.prevent="handleSubmit">
           <UFormField label="Server URL" name="serverUrl" :error="error">
             <UInput
               v-model="serverUrl"

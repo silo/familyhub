@@ -1,7 +1,8 @@
 // server/api/points/leaderboard.get.ts
 // Get family members with their points totals for leaderboard
-import { eq, sql, desc } from 'drizzle-orm'
-import { db, familyMembers, pointTransactions } from '../../db'
+import { eq, sql, desc } from "drizzle-orm";
+import { db, familyMembers, pointTransactions } from "../../db";
+import { withAvatarUrls } from "../../utils/avatar";
 
 export default defineEventHandler(async () => {
   // Get all family members with their point totals
@@ -16,17 +17,17 @@ export default defineEventHandler(async () => {
       totalPoints: sql<number>`COALESCE(SUM(CASE WHEN ${pointTransactions.type} = 'earned' THEN ${pointTransactions.amount} ELSE -${pointTransactions.amount} END), 0)::int`,
     })
     .from(familyMembers)
-    .leftJoin(pointTransactions, eq(familyMembers.id, pointTransactions.familyMemberId))
+    .leftJoin(
+      pointTransactions,
+      eq(familyMembers.id, pointTransactions.familyMemberId)
+    )
     .groupBy(familyMembers.id)
-    .orderBy(desc(sql`COALESCE(SUM(CASE WHEN ${pointTransactions.type} = 'earned' THEN ${pointTransactions.amount} ELSE -${pointTransactions.amount} END), 0)`))
+    .orderBy(
+      desc(
+        sql`COALESCE(SUM(CASE WHEN ${pointTransactions.type} = 'earned' THEN ${pointTransactions.amount} ELSE -${pointTransactions.amount} END), 0)`
+      )
+    );
 
-  // Add avatar URLs
-  const membersWithAvatars = members.map(member => ({
-    ...member,
-    avatarUrl: member.avatarType === 'custom'
-      ? member.avatarValue
-      : `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(member.avatarValue)}`,
-  }))
-
-  return { data: membersWithAvatars }
-})
+  // Add avatar URLs using centralized utility
+  return { data: withAvatarUrls(members) };
+});

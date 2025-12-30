@@ -56,7 +56,7 @@ async function handleLogin() {
 }
 
 // Read version from runtime config
-const runtimeConfig = useRuntimeConfig()
+// const runtimeConfig = useRuntimeConfig()
 const version = ref('1.0.0')
 
 // Navigation items
@@ -81,20 +81,17 @@ const navItems = [
       <UCard class="w-full max-w-sm">
         <template #header>
           <div class="text-center">
-            <h2 class="text-xl font-bold text-highlighted">
-              Settings Access
-            </h2>
+            <h2 class="text-xl font-bold text-highlighted">Settings Access</h2>
             <p class="mt-1 text-sm text-muted">
-              {{ isTimedOut && isAuthenticated ? 'Session timed out' : 'Enter password to continue' }}
+              {{
+                isTimedOut && isAuthenticated ? 'Session timed out' : 'Enter password to continue'
+              }}
             </p>
           </div>
         </template>
 
         <form class="space-y-4" @submit.prevent="handleLogin">
-          <UFormField
-            label="Password"
-            name="password"
-          >
+          <UFormField label="Password" name="password">
             <UInput
               v-model="password"
               type="password"
@@ -104,29 +101,13 @@ const navItems = [
             />
           </UFormField>
 
-          <UAlert
-            v-if="error"
-            color="error"
-            icon="i-lucide-alert-circle"
-            :title="error"
-          />
+          <UAlert v-if="error" color="error" icon="i-lucide-alert-circle" :title="error" />
 
           <div class="flex gap-2">
-            <UButton
-              to="/dashboard"
-              color="neutral"
-              variant="outline"
-              class="flex-1"
-            >
+            <UButton to="/dashboard" color="neutral" variant="outline" class="flex-1">
               Cancel
             </UButton>
-            <UButton
-              type="submit"
-              class="flex-1"
-              :loading="loading"
-            >
-              Unlock
-            </UButton>
+            <UButton type="submit" class="flex-1" :loading="loading"> Unlock </UButton>
           </div>
         </form>
       </UCard>
@@ -147,9 +128,7 @@ const navItems = [
                 icon="i-lucide-arrow-left"
                 size="sm"
               />
-              <h1 class="text-lg font-semibold text-highlighted">
-                Settings
-              </h1>
+              <h1 class="text-lg font-semibold text-highlighted">Settings</h1>
             </div>
           </div>
 
@@ -169,9 +148,7 @@ const navItems = [
 
           <!-- Footer -->
           <div class="border-t border-default p-4">
-            <p class="text-xs text-dimmed">
-              FamilyHub v{{ version }}
-            </p>
+            <p class="text-xs text-dimmed">FamilyHub v{{ version }}</p>
           </div>
         </div>
       </aside>

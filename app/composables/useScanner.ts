@@ -3,7 +3,12 @@
 
 import { Capacitor } from '@capacitor/core'
 import { Haptics, ImpactStyle } from '@capacitor/haptics'
-import type { ScanResult, CompletionResult, CompletionApiResponse, CompletionApiError } from '~/types'
+import type {
+  ScanResult,
+  CompletionResult,
+  CompletionApiResponse,
+  CompletionApiError,
+} from '~/types'
 
 export function useScanner() {
   const isScanning = ref(false)
@@ -47,7 +52,11 @@ export function useScanner() {
     error.value = null
 
     try {
-      const { CapacitorBarcodeScanner, CapacitorBarcodeScannerTypeHintALLOption } = await import('@capacitor/barcode-scanner')
+      const {
+        CapacitorBarcodeScanner,
+        CapacitorBarcodeScannerTypeHintALLOption,
+        CapacitorBarcodeScannerAndroidScanningLibrary,
+      } = await import('@capacitor/barcode-scanner')
 
       // scanBarcode is the correct API method
       const result = await CapacitorBarcodeScanner.scanBarcode({
@@ -58,15 +67,12 @@ export function useScanner() {
         cameraDirection: 1, // BACK
         scanOrientation: 1, // PORTRAIT
         android: {
-          scanningLibrary: 'zxing',
+          scanningLibrary: CapacitorBarcodeScannerAndroidScanningLibrary.ZXING,
         },
       })
 
       if (result.ScanResult) {
         await vibrate('light')
-
-        // Debug: Log raw scan result
-        console.log('[Scanner] Raw scan result:', result.ScanResult)
 
         // Parse the QR code value
         // Format 1: Full URL - https://example.com/api/chores/complete-by-qr?token=<qr_token>
@@ -77,23 +83,17 @@ export function useScanner() {
         // Try to extract token from URL query parameter
         try {
           const url = new URL(result.ScanResult)
-          console.log('[Scanner] Parsed as URL, searchParams:', url.searchParams.toString())
           const tokenParam = url.searchParams.get('token')
           if (tokenParam) {
             qrToken = tokenParam
-            console.log('[Scanner] Extracted token from URL:', qrToken)
           }
         } catch {
           // Not a URL, check for deep link format
           if (result.ScanResult.startsWith('familyhub://chore/')) {
             qrToken = result.ScanResult.replace('familyhub://chore/', '')
-            console.log('[Scanner] Extracted token from deep link:', qrToken)
-          } else {
-            console.log('[Scanner] Using raw value as token:', qrToken)
           }
         }
 
-        console.log('[Scanner] Final token to send:', qrToken)
         lastScanResult.value = { type: 'qr', value: qrToken }
         isScanning.value = false
         return lastScanResult.value
@@ -101,9 +101,9 @@ export function useScanner() {
 
       isScanning.value = false
       return null
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('QR scan failed:', e)
-      error.value = e.message || 'QR scanning failed'
+      error.value = (e as Error).message || 'QR scanning failed'
       isScanning.value = false
       return null
     }
@@ -133,10 +133,10 @@ export function useScanner() {
         alertMessage: 'Hold your device near the NFC tag',
       })
 
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         let listenerHandle: { remove: () => Promise<void> } | null = null
 
-        CapacitorNfc.addListener('nfcEvent', async (event) => {
+        CapacitorNfc.addListener('nfcEvent', async event => {
           if (event.tag?.id) {
             await vibrate('light')
 
@@ -155,7 +155,7 @@ export function useScanner() {
 
             resolve(lastScanResult.value)
           }
-        }).then((handle) => {
+        }).then(handle => {
           listenerHandle = handle
         })
 
@@ -193,23 +193,17 @@ export function useScanner() {
 
   // Complete chore by QR token
   async function completeByQr(token: string): Promise<CompletionResult> {
-    console.log('[Scanner] completeByQr called with token:', token)
     try {
       const url = apiUrl('/api/chores/complete-by-qr')
       const headers = getAuthHeaders()
-      console.log('[Scanner] API URL:', url)
-      console.log('[Scanner] Headers:', JSON.stringify(headers))
-      
+
       const response = await $fetch<CompletionApiResponse | CompletionApiError>(url, {
         method: 'POST',
         headers,
         body: { token },
       })
 
-      console.log('[Scanner] API Response:', JSON.stringify(response))
-
       if ('error' in response) {
-        console.log('[Scanner] API returned error:', response.error)
         await vibrate('error')
         return {
           success: false,
@@ -224,9 +218,8 @@ export function useScanner() {
         choreName: response.data.choreName,
         pointsEarned: response.data.pointsEarned,
       }
-    } catch (e: any) {
-      console.error('[Scanner] QR completion failed:', e)
-      console.error('[Scanner] Error details:', e.message, e.data)
+    } catch (e: unknown) {
+      console.error('QR completion failed:', e)
       await vibrate('error')
       return { success: false, error: 'Failed to complete chore' }
     }
@@ -235,11 +228,14 @@ export function useScanner() {
   // Complete chore by NFC tag ID
   async function completeByNfc(tagId: string): Promise<CompletionResult> {
     try {
-      const response = await $fetch<CompletionApiResponse | CompletionApiError>(apiUrl('/api/chores/complete-by-nfc'), {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: { tagId },
-      })
+      const response = await $fetch<CompletionApiResponse | CompletionApiError>(
+        apiUrl('/api/chores/complete-by-nfc'),
+        {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: { tagId },
+        }
+      )
 
       if ('error' in response) {
         await vibrate('error')
