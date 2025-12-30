@@ -1,0 +1,9 @@
+node_modules
+dist
+.output
+.nuxt
+*.log
+android
+ios
+public
+pnpm-lock.yaml

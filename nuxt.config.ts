@@ -1,11 +1,11 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2025-07-15',
+  compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
 
-  modules: ['@nuxt/ui'],
+  modules: ["@nuxt/ui", "@nuxt/eslint"],
 
-  css: ['~/assets/css/main.css'],
+  css: ["~/assets/css/main.css"],
 
   // Disable SSR for Capacitor mobile app compatibility
   ssr: false,
@@ -13,7 +13,15 @@ export default defineNuxtConfig({
   // NuxtUI theme configuration - register dynamic colors
   ui: {
     theme: {
-      colors: ['primary', 'secondary', 'info', 'success', 'warning', 'error', 'neutral'],
+      colors: [
+        "primary",
+        "secondary",
+        "info",
+        "success",
+        "warning",
+        "error",
+        "neutral",
+      ],
     },
   },
 
@@ -21,14 +29,17 @@ export default defineNuxtConfig({
     databaseUrl: process.env.DATABASE_URL,
     public: {
       // API base URL for mobile app (override in production)
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || '',
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || "",
     },
   },
 
   app: {
     head: {
       meta: [
-        { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
+        {
+          name: "viewport",
+          content: "width=device-width, initial-scale=1, viewport-fit=cover",
+        },
       ],
     },
   },
@@ -36,20 +47,28 @@ export default defineNuxtConfig({
   // For Capacitor: generate static files to dist folder
   nitro: {
     output: {
-      publicDir: '.output/public',
+      publicDir: ".output/public",
     },
     prerender: {
       // Generate index.html for SPA fallback
-      routes: ['/', '/mobile', '/mobile/setup', '/mobile/login', '/mobile/scan', '/mobile/chores', '/mobile/profile'],
+      routes: [
+        "/",
+        "/mobile",
+        "/mobile/setup",
+        "/mobile/login",
+        "/mobile/scan",
+        "/mobile/chores",
+        "/mobile/profile",
+      ],
     },
     // Enable CORS for mobile app development
     routeRules: {
-      '/api/**': {
+      "/api/**": {
         cors: true,
         headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
         },
       },
     },
@@ -58,4 +77,4 @@ export default defineNuxtConfig({
   future: {
     compatibilityVersion: 4,
   },
-})
+});
