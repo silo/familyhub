@@ -57,7 +57,7 @@ async function handleSave() {
     setTimeout(() => {
       success.value = false
     }, 3000)
-  } catch (e) {
+  } catch {
     error.value = 'Failed to update password'
   } finally {
     loading.value = false
@@ -68,22 +68,14 @@ async function handleSave() {
 <template>
   <div class="p-6">
     <div class="mb-6">
-      <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-        Security Settings
-      </h2>
-      <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-        Change your admin password
-      </p>
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Security Settings</h2>
+      <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Change your admin password</p>
     </div>
 
     <UCard class="max-w-lg">
       <form class="space-y-6" @submit.prevent="handleSave">
         <!-- Current Password -->
-        <UFormField
-          label="Current Password"
-          name="currentPassword"
-          required
-        >
+        <UFormField label="Current Password" name="currentPassword" required>
           <UInput
             v-model="form.currentPassword"
             type="password"
@@ -110,11 +102,7 @@ async function handleSave() {
         </UFormField>
 
         <!-- Confirm Password -->
-        <UFormField
-          label="Confirm New Password"
-          name="confirmPassword"
-          required
-        >
+        <UFormField label="Confirm New Password" name="confirmPassword" required>
           <UInput
             v-model="form.confirmPassword"
             type="password"
@@ -125,7 +113,9 @@ async function handleSave() {
 
         <!-- Mismatch Warning -->
         <UAlert
-          v-if="form.newPassword && form.confirmPassword && form.newPassword !== form.confirmPassword"
+          v-if="
+            form.newPassword && form.confirmPassword && form.newPassword !== form.confirmPassword
+          "
           color="warning"
           icon="i-lucide-alert-triangle"
           title="Passwords don't match"
@@ -139,21 +129,10 @@ async function handleSave() {
           title="Password updated successfully"
         />
 
-        <UAlert
-          v-if="error"
-          color="error"
-          icon="i-lucide-alert-circle"
-          :title="error"
-        />
+        <UAlert v-if="error" color="error" icon="i-lucide-alert-circle" :title="error" />
 
         <!-- Submit -->
-        <UButton
-          type="submit"
-          :loading="loading"
-          :disabled="!isValid"
-        >
-          Update Password
-        </UButton>
+        <UButton type="submit" :loading="loading" :disabled="!isValid"> Update Password </UButton>
       </form>
     </UCard>
   </div>

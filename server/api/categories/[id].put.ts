@@ -5,11 +5,15 @@ import { db, categories } from '../../db'
 
 const updateSchema = z.object({
   name: z.string().min(1, 'Name is required').max(50),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).nullable().optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .nullable()
+    .optional(),
   icon: z.string().max(50).nullable().optional(),
 })
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async event => {
   const id = getRouterParam(event, 'id')
   if (!id || isNaN(Number(id))) {
     return { error: 'Invalid ID' }
@@ -42,8 +46,8 @@ export default defineEventHandler(async (event) => {
     }
 
     return { data: updated }
-  } catch (error: any) {
-    if (error?.code === '23505') {
+  } catch (error: unknown) {
+    if ((error as { code?: string })?.code === '23505') {
       return { error: 'A category with this name already exists' }
     }
     console.error('Failed to update category:', error)

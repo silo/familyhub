@@ -46,7 +46,7 @@ const deletingCategory = ref<Category | null>(null)
 const form = reactive({
   name: '',
   color: CATEGORY_COLORS[0],
-  icon: CATEGORY_ICONS[0]?.value || 'i-lucide-home' as string,
+  icon: CATEGORY_ICONS[0]?.value || ('i-lucide-home' as string),
 })
 
 const loading = ref(false)
@@ -117,7 +117,7 @@ async function handleSave() {
 
     isModalOpen.value = false
     await refresh()
-  } catch (e) {
+  } catch {
     error.value = 'Failed to save category'
   } finally {
     loading.value = false
@@ -143,7 +143,7 @@ async function handleDelete() {
     isDeleteModalOpen.value = false
     deletingCategory.value = null
     await refresh()
-  } catch (e) {
+  } catch {
     error.value = 'Failed to delete category'
   } finally {
     loading.value = false
@@ -155,34 +155,24 @@ async function handleDelete() {
   <div class="p-6">
     <div class="mb-6 flex items-center justify-between">
       <div>
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-          Categories
-        </h2>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Categories</h2>
         <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
           Organize your chores into categories
         </p>
       </div>
-      <UButton icon="i-lucide-plus" @click="openCreate">
-        Add Category
-      </UButton>
+      <UButton icon="i-lucide-plus" @click="openCreate"> Add Category </UButton>
     </div>
 
     <!-- Categories List -->
     <div class="space-y-2">
-      <UCard
-        v-for="category in allCategories"
-        :key="category.id"
-      >
+      <UCard v-for="category in allCategories" :key="category.id">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div
               class="flex size-10 items-center justify-center rounded-lg"
               :style="{ backgroundColor: category.color || '#6B7280' }"
             >
-              <UIcon
-                :name="category.icon || 'i-lucide-folder'"
-                class="size-5 text-white"
-              />
+              <UIcon :name="category.icon || 'i-lucide-folder'" class="size-5 text-white" />
             </div>
             <span class="font-medium text-gray-900 dark:text-white">
               {{ category.name }}
@@ -215,19 +205,15 @@ async function handleDelete() {
       class="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center dark:border-gray-700"
     >
       <UIcon name="i-lucide-folder" class="mx-auto size-12 text-gray-400" />
-      <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">
-        No categories
-      </h3>
+      <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">No categories</h3>
       <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
         Categories help organize your chores (optional)
       </p>
-      <UButton class="mt-4" @click="openCreate">
-        Add Category
-      </UButton>
+      <UButton class="mt-4" @click="openCreate"> Add Category </UButton>
     </div>
 
     <!-- Create/Edit Modal -->
-    <UModal 
+    <UModal
       v-model:open="isModalOpen"
       :title="editingCategory ? 'Edit Category' : 'Add Category'"
       :description="editingCategory ? 'Update category details' : 'Create a new category'"
@@ -251,10 +237,7 @@ async function handleDelete() {
           <form class="space-y-6" @submit.prevent="handleSave">
             <!-- Name -->
             <UFormField label="Name" name="name" required>
-              <UInput
-                v-model="form.name"
-                placeholder="e.g., Kitchen, Yard, Pets"
-              />
+              <UInput v-model="form.name" placeholder="e.g., Kitchen, Yard, Pets" />
             </UFormField>
 
             <!-- Icon -->
@@ -265,7 +248,11 @@ async function handleDelete() {
                   :key="icon.value"
                   type="button"
                   class="flex size-10 items-center justify-center rounded-lg border-2 transition-colors"
-                  :class="form.icon === icon.value ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-gray-200 dark:border-gray-700'"
+                  :class="
+                    form.icon === icon.value
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                      : 'border-gray-200 dark:border-gray-700'
+                  "
                   :title="icon.label"
                   @click="form.icon = icon.value"
                 >
@@ -303,21 +290,11 @@ async function handleDelete() {
             </div>
 
             <!-- Error -->
-            <UAlert
-              v-if="error"
-              color="error"
-              icon="i-lucide-alert-circle"
-              :title="error"
-            />
+            <UAlert v-if="error" color="error" icon="i-lucide-alert-circle" :title="error" />
 
             <!-- Actions -->
             <div class="flex justify-end gap-2">
-              <UButton
-                type="button"
-                color="neutral"
-                variant="outline"
-                @click="isModalOpen = false"
-              >
+              <UButton type="button" color="neutral" variant="outline" @click="isModalOpen = false">
                 Cancel
               </UButton>
               <UButton type="submit" :loading="loading">
@@ -330,7 +307,7 @@ async function handleDelete() {
     </UModal>
 
     <!-- Delete Confirmation Modal -->
-    <UModal 
+    <UModal
       v-model:open="isDeleteModalOpen"
       title="Delete Category"
       :description="`Delete ${deletingCategory?.name || 'this category'}`"
@@ -338,32 +315,20 @@ async function handleDelete() {
       <template #content>
         <UCard>
           <template #header>
-            <h3 class="text-lg font-semibold text-error-600">
-              Delete Category
-            </h3>
+            <h3 class="text-lg font-semibold text-error-600">Delete Category</h3>
           </template>
 
           <p class="text-gray-600 dark:text-gray-400">
-            Are you sure you want to delete <strong>{{ deletingCategory?.name }}</strong>?
-            Chores in this category will become uncategorized.
+            Are you sure you want to delete <strong>{{ deletingCategory?.name }}</strong
+            >? Chores in this category will become uncategorized.
           </p>
 
           <template #footer>
             <div class="flex justify-end gap-2">
-              <UButton
-                color="neutral"
-                variant="outline"
-                @click="isDeleteModalOpen = false"
-              >
+              <UButton color="neutral" variant="outline" @click="isDeleteModalOpen = false">
                 Cancel
               </UButton>
-              <UButton
-                color="error"
-                :loading="loading"
-                @click="handleDelete"
-              >
-                Delete
-              </UButton>
+              <UButton color="error" :loading="loading" @click="handleDelete"> Delete </UButton>
             </div>
           </template>
         </UCard>

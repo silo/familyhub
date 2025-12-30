@@ -1,13 +1,20 @@
 // server/api/chores/[id]/complete.post.ts
 import { z } from 'zod'
-import { eq, and, gte, desc } from 'drizzle-orm'
-import { db, chores, choreCompletions, pointTransactions, activityLog, familyMembers } from '../../../db'
+import { eq, and, desc } from 'drizzle-orm'
+import {
+  db,
+  chores,
+  choreCompletions,
+  pointTransactions,
+  activityLog,
+  familyMembers,
+} from '../../../db'
 
 const completeSchema = z.object({
   completedBy: z.coerce.number().int().positive('Family member is required'),
 })
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async event => {
   const id = getRouterParam(event, 'id')
   if (!id || isNaN(Number(id))) {
     return { error: 'Invalid chore ID' }

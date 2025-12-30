@@ -1,15 +1,15 @@
 // server/api/points/redeem.post.ts
 import { z } from 'zod'
-import { db, familyMembers, pointTransactions, activityLog, settings } from '../../db'
+import { db, familyMembers, pointTransactions, activityLog } from '../../db'
 import { eq, sum, and } from 'drizzle-orm'
 
 const redeemSchema = z.object({
   familyMemberId: z.number().int().positive(),
 })
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async event => {
   const body = await readBody(event)
-  
+
   // Validate input
   const parsed = redeemSchema.safeParse(body)
   if (!parsed.success) {

@@ -1,7 +1,7 @@
 // server/utils/auth.ts
 import type { H3Event } from 'h3'
 import { db } from '../db'
-import { userSessions, familyMembers } from '../db/schema'
+import { userSessions } from '../db/schema'
 import { eq, and, gt } from 'drizzle-orm'
 import type { FamilyMember } from '../db/schema'
 
@@ -16,9 +16,11 @@ declare module 'h3' {
  * Get the authenticated user from the request
  * Returns null if not authenticated
  */
-export async function getAuthUser(event: H3Event): Promise<Omit<FamilyMember, 'passwordHash'> | null> {
+export async function getAuthUser(
+  event: H3Event
+): Promise<Omit<FamilyMember, 'passwordHash'> | null> {
   const authHeader = getHeader(event, 'authorization')
-  
+
   if (!authHeader?.startsWith('Bearer ')) {
     return null
   }
@@ -27,10 +29,7 @@ export async function getAuthUser(event: H3Event): Promise<Omit<FamilyMember, 'p
 
   try {
     const session = await db.query.userSessions.findFirst({
-      where: and(
-        eq(userSessions.sessionToken, token),
-        gt(userSessions.expiresAt, new Date())
-      ),
+      where: and(eq(userSessions.sessionToken, token), gt(userSessions.expiresAt, new Date())),
       with: {
         familyMember: true,
       },
@@ -53,7 +52,7 @@ export async function getAuthUser(event: H3Event): Promise<Omit<FamilyMember, 'p
  */
 export async function requireAuth(event: H3Event): Promise<Omit<FamilyMember, 'passwordHash'>> {
   const user = await getAuthUser(event)
-  
+
   if (!user) {
     throw createError({
       statusCode: 401,
@@ -72,7 +71,7 @@ export async function requireAuth(event: H3Event): Promise<Omit<FamilyMember, 'p
  */
 export async function requireAdmin(event: H3Event): Promise<Omit<FamilyMember, 'passwordHash'>> {
   const user = await requireAuth(event)
-  
+
   if (!user.isAdmin) {
     throw createError({
       statusCode: 403,

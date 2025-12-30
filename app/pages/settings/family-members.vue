@@ -38,7 +38,7 @@ const form = reactive({
   name: '',
   avatarType: 'dicebear' as 'dicebear' | 'custom',
   avatarValue: '',
-  color: PASTEL_COLORS[0]?.value || '#FFB3BA' as string,
+  color: PASTEL_COLORS[0]?.value || ('#FFB3BA' as string),
 })
 
 // Password form state
@@ -131,7 +131,7 @@ async function handleSave() {
 
     isModalOpen.value = false
     await refresh()
-  } catch (e) {
+  } catch {
     error.value = 'Failed to save family member'
   } finally {
     loading.value = false
@@ -157,7 +157,7 @@ async function handleDelete() {
     isDeleteModalOpen.value = false
     deletingMember.value = null
     await refresh()
-  } catch (e) {
+  } catch {
     error.value = 'Failed to delete family member'
   } finally {
     loading.value = false
@@ -176,17 +176,17 @@ function openPasswordModal(member: FamilyMember) {
 // Set password
 async function handleSetPassword() {
   if (!passwordMember.value) return
-  
+
   if (!passwordForm.password) {
     error.value = 'Password is required'
     return
   }
-  
+
   if (passwordForm.password.length < 4) {
     error.value = 'Password must be at least 4 characters'
     return
   }
-  
+
   if (passwordForm.password !== passwordForm.confirmPassword) {
     error.value = 'Passwords do not match'
     return
@@ -216,7 +216,7 @@ async function handleSetPassword() {
       color: 'success',
     })
     await refresh()
-  } catch (e) {
+  } catch {
     error.value = 'Failed to set password'
   } finally {
     loading.value = false
@@ -228,33 +228,20 @@ async function handleSetPassword() {
   <div class="p-6">
     <div class="mb-6 flex items-center justify-between">
       <div>
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-          Family Members
-        </h2>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Family Members</h2>
         <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
           Manage your family members and their profiles
         </p>
       </div>
-      <UButton icon="i-lucide-plus" @click="openCreate">
-        Add Member
-      </UButton>
+      <UButton icon="i-lucide-plus" @click="openCreate"> Add Member </UButton>
     </div>
 
     <!-- Members Grid -->
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <UCard
-        v-for="member in members"
-        :key="member.id"
-        class="relative"
-      >
+      <UCard v-for="member in members" :key="member.id" class="relative">
         <!-- Admin Badge -->
-        <div
-          v-if="member.isAdmin"
-          class="absolute right-3 top-3"
-        >
-          <UBadge color="primary" variant="subtle">
-            Admin
-          </UBadge>
+        <div v-if="member.isAdmin" class="absolute right-3 top-3">
+          <UBadge color="primary" variant="subtle"> Admin </UBadge>
         </div>
 
         <div class="flex items-center gap-4">
@@ -287,21 +274,11 @@ async function handleSetPassword() {
                 class="inline-block size-4 rounded-full"
                 :style="{ backgroundColor: member.color }"
               />
-              <UBadge 
-                v-if="member.passwordHash" 
-                color="success" 
-                variant="subtle"
-                size="xs"
-              >
+              <UBadge v-if="member.passwordHash" color="success" variant="subtle" size="xs">
                 <UIcon name="i-lucide-key" class="mr-1 size-3" />
                 Password set
               </UBadge>
-              <UBadge 
-                v-else 
-                color="warning" 
-                variant="subtle"
-                size="xs"
-              >
+              <UBadge v-else color="warning" variant="subtle" size="xs">
                 <UIcon name="i-lucide-alert-triangle" class="mr-1 size-3" />
                 No password
               </UBadge>
@@ -350,19 +327,15 @@ async function handleSetPassword() {
       class="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center dark:border-gray-700"
     >
       <UIcon name="i-lucide-users" class="mx-auto size-12 text-gray-400" />
-      <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">
-        No family members
-      </h3>
+      <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">No family members</h3>
       <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
         Get started by adding your first family member
       </p>
-      <UButton class="mt-4" @click="openCreate">
-        Add Family Member
-      </UButton>
+      <UButton class="mt-4" @click="openCreate"> Add Family Member </UButton>
     </div>
 
     <!-- Create/Edit Modal -->
-    <UModal 
+    <UModal
       v-model:open="isModalOpen"
       :title="editingMember ? 'Edit Family Member' : 'Add Family Member'"
       :description="editingMember ? 'Update family member details' : 'Add a new family member'"
@@ -386,11 +359,7 @@ async function handleSetPassword() {
           <form class="space-y-6" @submit.prevent="handleSave">
             <!-- Name -->
             <UFormField label="Name" name="name" required>
-              <UInput
-                v-model="form.name"
-                placeholder="Enter name"
-                icon="i-lucide-user"
-              />
+              <UInput v-model="form.name" placeholder="Enter name" icon="i-lucide-user" />
             </UFormField>
 
             <!-- Avatar Preview & Randomize -->
@@ -435,21 +404,11 @@ async function handleSetPassword() {
             </UFormField>
 
             <!-- Error -->
-            <UAlert
-              v-if="error"
-              color="error"
-              icon="i-lucide-alert-circle"
-              :title="error"
-            />
+            <UAlert v-if="error" color="error" icon="i-lucide-alert-circle" :title="error" />
 
             <!-- Actions -->
             <div class="flex justify-end gap-2">
-              <UButton
-                type="button"
-                color="neutral"
-                variant="outline"
-                @click="isModalOpen = false"
-              >
+              <UButton type="button" color="neutral" variant="outline" @click="isModalOpen = false">
                 Cancel
               </UButton>
               <UButton type="submit" :loading="loading">
@@ -462,7 +421,7 @@ async function handleSetPassword() {
     </UModal>
 
     <!-- Delete Confirmation Modal -->
-    <UModal 
+    <UModal
       v-model:open="isDeleteModalOpen"
       title="Delete Family Member"
       :description="`Permanently delete ${deletingMember?.name || 'this member'} and all their data`"
@@ -470,32 +429,21 @@ async function handleSetPassword() {
       <template #content>
         <UCard>
           <template #header>
-            <h3 class="text-lg font-semibold text-error-600">
-              Delete Family Member
-            </h3>
+            <h3 class="text-lg font-semibold text-error-600">Delete Family Member</h3>
           </template>
 
           <p class="text-gray-600 dark:text-gray-400">
-            Are you sure you want to delete <strong>{{ deletingMember?.name }}</strong>?
-            This will permanently remove all their chore completions, points, and activity history.
+            Are you sure you want to delete <strong>{{ deletingMember?.name }}</strong
+            >? This will permanently remove all their chore completions, points, and activity
+            history.
           </p>
 
           <template #footer>
             <div class="flex justify-end gap-2">
-              <UButton
-                color="neutral"
-                variant="outline"
-                @click="isDeleteModalOpen = false"
-              >
+              <UButton color="neutral" variant="outline" @click="isDeleteModalOpen = false">
                 Cancel
               </UButton>
-              <UButton
-                color="error"
-                :loading="loading"
-                @click="handleDelete"
-              >
-                Delete
-              </UButton>
+              <UButton color="error" :loading="loading" @click="handleDelete"> Delete </UButton>
             </div>
           </template>
         </UCard>
@@ -503,7 +451,7 @@ async function handleSetPassword() {
     </UModal>
 
     <!-- Password Modal -->
-    <UModal 
+    <UModal
       v-model:open="isPasswordModalOpen"
       title="Set Password"
       :description="`Set login password for ${passwordMember?.name || 'member'}`"
@@ -512,9 +460,7 @@ async function handleSetPassword() {
         <UCard>
           <template #header>
             <div class="flex items-center justify-between">
-              <h3 class="text-lg font-semibold">
-                Set Password for {{ passwordMember?.name }}
-              </h3>
+              <h3 class="text-lg font-semibold">Set Password for {{ passwordMember?.name }}</h3>
               <UButton
                 color="neutral"
                 variant="ghost"
@@ -526,7 +472,11 @@ async function handleSetPassword() {
 
           <form class="space-y-4" @submit.prevent="handleSetPassword">
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              {{ passwordMember?.passwordHash ? 'Update the password for this family member.' : 'Set a password so this family member can log in to the mobile app.' }}
+              {{
+                passwordMember?.passwordHash
+                  ? 'Update the password for this family member.'
+                  : 'Set a password so this family member can log in to the mobile app.'
+              }}
             </p>
 
             <!-- Password -->
@@ -550,12 +500,7 @@ async function handleSetPassword() {
             </UFormField>
 
             <!-- Error -->
-            <UAlert
-              v-if="error"
-              color="error"
-              icon="i-lucide-alert-circle"
-              :title="error"
-            />
+            <UAlert v-if="error" color="error" icon="i-lucide-alert-circle" :title="error" />
 
             <!-- Actions -->
             <div class="flex justify-end gap-2">

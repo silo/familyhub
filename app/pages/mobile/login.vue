@@ -4,7 +4,6 @@ definePageMeta({
   layout: 'setup',
 })
 
-const router = useRouter()
 const { login, isAuthenticated, isLoading, loadSession } = useMobileAuth()
 const { isConfigured, loadConfig, apiUrl, serverUrl, clearConfig } = useMobileConfig()
 
@@ -13,15 +12,15 @@ const configLoading = ref(true)
 // Load config and session on mount
 onMounted(async () => {
   await loadConfig()
-  
+
   // If not configured, redirect to setup
   if (!isConfigured.value) {
     await navigateTo('/mobile/setup')
     return
   }
-  
+
   configLoading.value = false
-  
+
   await loadSession()
   if (isAuthenticated.value) {
     await navigateTo('/mobile/scan')
@@ -29,22 +28,35 @@ onMounted(async () => {
 })
 
 // Fetch family members for login
-const members = ref<Array<{ id: number; name: string; avatarType: string; avatarValue: string; color: string; hasPassword: boolean }>>([])
+const members = ref<
+  Array<{
+    id: number
+    name: string
+    avatarType: string
+    avatarValue: string
+    color: string
+    hasPassword: boolean
+  }>
+>([])
 const fetchError = ref<string | null>(null)
 
-watch(isConfigured, async (configured) => {
-  if (configured && serverUrl.value) {
-    try {
-      const response = await $fetch<{ data: typeof members.value }>(apiUrl('/api/auth/members'))
-      if ('data' in response) {
-        members.value = response.data.filter(m => m.hasPassword)
+watch(
+  isConfigured,
+  async configured => {
+    if (configured && serverUrl.value) {
+      try {
+        const response = await $fetch<{ data: typeof members.value }>(apiUrl('/api/auth/members'))
+        if ('data' in response) {
+          members.value = response.data.filter(m => m.hasPassword)
+        }
+      } catch (error) {
+        console.error('Failed to fetch members:', error)
+        fetchError.value = 'Failed to connect to server'
       }
-    } catch (error) {
-      console.error('Failed to fetch members:', error)
-      fetchError.value = 'Failed to connect to server'
     }
-  }
-}, { immediate: true })
+  },
+  { immediate: true }
+)
 
 const selectedMember = ref<number | null>(null)
 const password = ref('')
@@ -98,15 +110,9 @@ async function changeServer() {
   <UCard v-else class="mx-auto max-w-md">
     <template #header>
       <div class="text-center">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          FamilyHub
-        </h1>
-        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-          Select your profile to continue
-        </p>
-        <p v-if="serverUrl" class="mt-1 text-xs text-gray-400">
-          Connected to: {{ serverUrl }}
-        </p>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">FamilyHub</h1>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Select your profile to continue</p>
+        <p v-if="serverUrl" class="mt-1 text-xs text-gray-400">Connected to: {{ serverUrl }}</p>
       </div>
     </template>
 
@@ -129,12 +135,8 @@ async function changeServer() {
       <!-- Family Member Selection -->
       <div v-else-if="members.length === 0" class="text-center py-8">
         <UIcon name="i-lucide-users" class="mx-auto h-12 w-12 text-gray-400" />
-        <p class="mt-2 text-gray-600 dark:text-gray-400">
-          No family members with passwords found.
-        </p>
-        <p class="text-sm text-gray-500">
-          Ask an admin to set up your password.
-        </p>
+        <p class="mt-2 text-gray-600 dark:text-gray-400">No family members with passwords found.</p>
+        <p class="text-sm text-gray-500">Ask an admin to set up your password.</p>
       </div>
 
       <div v-else class="grid gap-3">
@@ -146,7 +148,7 @@ async function changeServer() {
           :class="[
             selectedMember === member.id
               ? 'border-primary bg-primary/5'
-              : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
+              : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600',
           ]"
           @click="selectedMember = member.id"
         >
@@ -155,7 +157,7 @@ async function changeServer() {
             :alt="member.name"
             class="h-12 w-12 rounded-full"
             :style="{ backgroundColor: member.color }"
-          >
+          />
           <span class="font-medium text-gray-900 dark:text-white">
             {{ member.name }}
           </span>
@@ -168,11 +170,7 @@ async function changeServer() {
       </div>
 
       <!-- Password Input -->
-      <UFormField
-        v-if="selectedMember"
-        label="Password"
-        name="password"
-      >
+      <UFormField v-if="selectedMember" label="Password" name="password">
         <UInput
           v-model="password"
           type="password"
@@ -184,12 +182,7 @@ async function changeServer() {
       </UFormField>
 
       <!-- Error Message -->
-      <UAlert
-        v-if="error"
-        color="error"
-        icon="i-lucide-alert-circle"
-        :title="error"
-      />
+      <UAlert v-if="error" color="error" icon="i-lucide-alert-circle" :title="error" />
 
       <!-- Login Button -->
       <UButton

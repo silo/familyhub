@@ -1,8 +1,8 @@
 // server/api/chores/index.get.ts
-import { db, chores, categories, familyMembers } from '../../db'
+import { db, chores } from '../../db'
 import { isNull, desc } from 'drizzle-orm'
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async event => {
   const query = getQuery(event)
   const includeDeleted = query.includeDeleted === 'true'
 

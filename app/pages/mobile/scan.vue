@@ -5,7 +5,14 @@ definePageMeta({
 })
 
 const { user, isAuthenticated, logout, loadSession, isLoading: authLoading } = useMobileAuth()
-const { startQrScan, stopQrScan, startNfcScan, isScanning, error: scanError, handleScanAndComplete, isNative } = useScanner()
+const {
+  startQrScan,
+  startNfcScan,
+  isScanning,
+  error: scanError,
+  handleScanAndComplete,
+  isNative,
+} = useScanner()
 
 // Check authentication
 onMounted(async () => {
@@ -45,12 +52,12 @@ function formatCooldownRemaining(cooldownEndsAt: string): string {
   const endTime = new Date(cooldownEndsAt)
   const now = new Date()
   const diffMs = endTime.getTime() - now.getTime()
-  
+
   if (diffMs <= 0) return 'Ready now'
-  
+
   const diffMins = Math.floor(diffMs / 60000)
   const diffHours = Math.floor(diffMins / 60)
-  
+
   if (diffHours > 0) {
     const remainingMins = diffMins % 60
     return `${diffHours}h ${remainingMins}m remaining`
@@ -59,7 +66,13 @@ function formatCooldownRemaining(cooldownEndsAt: string): string {
 }
 
 // Show completion result
-function showCompletionResult(result: { success: boolean; choreName?: string; pointsEarned?: number; error?: string; cooldownEndsAt?: string }) {
+function showCompletionResult(result: {
+  success: boolean
+  choreName?: string
+  pointsEarned?: number
+  error?: string
+  cooldownEndsAt?: string
+}) {
   showResult.value = true
   resultSuccess.value = result.success
   resultCooldown.value = null
@@ -116,22 +129,15 @@ function getAvatarUrl() {
               :alt="user?.name"
               class="h-10 w-10 rounded-full"
               :style="{ backgroundColor: user?.color }"
-            >
+            />
             <div>
               <p class="font-medium text-gray-900 dark:text-white">
                 {{ user?.name }}
               </p>
-              <p class="text-sm text-gray-500">
-                Ready to scan
-              </p>
+              <p class="text-sm text-gray-500">Ready to scan</p>
             </div>
           </div>
-          <UButton
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-log-out"
-            @click="handleLogout"
-          />
+          <UButton color="neutral" variant="ghost" icon="i-lucide-log-out" @click="handleLogout" />
         </div>
       </header>
 
@@ -146,10 +152,18 @@ function getAvatarUrl() {
             <div class="text-center">
               <div
                 class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full"
-                :class="resultSuccess ? 'bg-green-500' : resultCooldown ? 'bg-yellow-500' : 'bg-red-500'"
+                :class="
+                  resultSuccess ? 'bg-green-500' : resultCooldown ? 'bg-yellow-500' : 'bg-red-500'
+                "
               >
                 <UIcon
-                  :name="resultSuccess ? 'i-lucide-check' : resultCooldown ? 'i-lucide-clock' : 'i-lucide-x'"
+                  :name="
+                    resultSuccess
+                      ? 'i-lucide-check'
+                      : resultCooldown
+                        ? 'i-lucide-clock'
+                        : 'i-lucide-x'
+                  "
                   class="h-10 w-10 text-white"
                 />
               </div>
@@ -162,7 +176,10 @@ function getAvatarUrl() {
               <p v-if="resultCooldown" class="mt-2 text-lg text-yellow-400">
                 {{ resultCooldown }}
               </p>
-              <p v-if="resultSuccess && resultPoints > 0" class="mt-2 text-xl font-bold text-yellow-400">
+              <p
+                v-if="resultSuccess && resultPoints > 0"
+                class="mt-2 text-xl font-bold text-yellow-400"
+              >
                 +{{ resultPoints }} points
               </p>
             </div>
@@ -170,18 +187,11 @@ function getAvatarUrl() {
         </Transition>
 
         <!-- Not Native Warning -->
-        <UAlert
-          v-if="!isNative"
-          color="warning"
-          icon="i-lucide-smartphone"
-          class="mb-6 max-w-md"
-        >
-          <template #title>
-            Mobile App Required
-          </template>
+        <UAlert v-if="!isNative" color="warning" icon="i-lucide-smartphone" class="mb-6 max-w-md">
+          <template #title> Mobile App Required </template>
           <template #description>
-            QR and NFC scanning only works in the mobile app.
-            Install FamilyHub on your phone to use this feature.
+            QR and NFC scanning only works in the mobile app. Install FamilyHub on your phone to use
+            this feature.
           </template>
         </UAlert>
 
@@ -241,10 +251,7 @@ function getAvatarUrl() {
       <!-- Bottom Navigation -->
       <nav class="border-t border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
         <div class="flex justify-around py-3">
-          <NuxtLink
-            to="/mobile/scan"
-            class="flex flex-col items-center text-primary"
-          >
+          <NuxtLink to="/mobile/scan" class="flex flex-col items-center text-primary">
             <UIcon name="i-lucide-scan" class="h-6 w-6" />
             <span class="mt-1 text-xs">Scan</span>
           </NuxtLink>

@@ -9,7 +9,7 @@ const createSchema = z.object({
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid color format'),
 })
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async event => {
   const body = await readBody(event)
   const result = createSchema.safeParse(body)
 
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   const { name, avatarType, avatarValue, color } = result.data
 
   // Validate color is from allowed palette
-  if (!PASTEL_COLORS.includes(color as any)) {
+  if (!(PASTEL_COLORS as unknown as string[]).includes(color as string)) {
     return {
       error: 'Invalid color selection',
     }

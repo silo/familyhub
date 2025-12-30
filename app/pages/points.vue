@@ -1,213 +1,206 @@
 <script setup lang="ts">
 // Points/Leaderboard page
-import { formatRelativeDate } from "~/utils/date";
+import { formatRelativeDate } from '~/utils/date'
 
 definePageMeta({
-  layout: "default",
-});
+  layout: 'default',
+})
 
-const toast = useToast();
-const { isAuthenticated, verify } = useSettingsAuth();
+const toast = useToast()
+const { isAuthenticated, verify } = useSettingsAuth()
 
 interface LeaderboardMember {
-  id: number;
-  name: string;
-  avatarType: string;
-  avatarValue: string;
-  avatarUrl: string;
-  color: string;
-  isAdmin: boolean;
-  totalPoints: number;
+  id: number
+  name: string
+  avatarType: string
+  avatarValue: string
+  avatarUrl: string
+  color: string
+  isAdmin: boolean
+  totalPoints: number
 }
 
 interface PointTransaction {
-  id: number;
-  familyMemberId: number;
-  amount: number;
-  type: "earned" | "redeemed";
-  description: string | null;
-  createdAt: string;
+  id: number
+  familyMemberId: number
+  amount: number
+  type: 'earned' | 'redeemed'
+  description: string | null
+  createdAt: string
 }
 
 // Fetch settings for currency info
 const { data: settingsData } = await useFetch<{
-  data: { currency: string; pointValue: string };
-}>("/api/settings");
-const currency = computed(() => settingsData.value?.data?.currency || "USD");
-const pointValue = computed(() =>
-  parseFloat(settingsData.value?.data?.pointValue || "1.00")
-);
+  data: { currency: string; pointValue: string }
+}>('/api/settings')
+const currency = computed(() => settingsData.value?.data?.currency || 'USD')
+const pointValue = computed(() => parseFloat(settingsData.value?.data?.pointValue || '1.00'))
 
 // Fetch leaderboard data
 const {
   data: leaderboardData,
   status,
   refresh: refreshLeaderboard,
-} = await useFetch<{ data: LeaderboardMember[] }>("/api/points/leaderboard");
+} = await useFetch<{ data: LeaderboardMember[] }>('/api/points/leaderboard')
 
-const leaderboard = computed(() => leaderboardData.value?.data || []);
+const leaderboard = computed(() => leaderboardData.value?.data || [])
 
 // Selected member for history view
-const selectedMember = ref<LeaderboardMember | null>(null);
+const selectedMember = ref<LeaderboardMember | null>(null)
 
 // Auth modal state for redemption
-const showAuthModal = ref(false);
-const authCredential = ref("");
-const authError = ref("");
-const authLoading = ref(false);
+const showAuthModal = ref(false)
+const authCredential = ref('')
+const authError = ref('')
+const authLoading = ref(false)
 
 // Redemption confirmation modal
-const showRedeemConfirm = ref(false);
-const redeemLoading = ref(false);
+const showRedeemConfirm = ref(false)
+const redeemLoading = ref(false)
 
 // Computed money value for selected member
 const selectedMemberMoneyValue = computed(() => {
-  if (!selectedMember.value) return "0.00";
-  return (selectedMember.value.totalPoints * pointValue.value).toFixed(2);
-});
+  if (!selectedMember.value) return '0.00'
+  return (selectedMember.value.totalPoints * pointValue.value).toFixed(2)
+})
 
 // Point history for selected member
-const historyMemberId = ref<number | null>(null);
+const historyMemberId = ref<number | null>(null)
 const { data: historyData, refresh: refreshHistory } = await useFetch<{
-  data: PointTransaction[];
-}>(
-  () =>
-    historyMemberId.value ? `/api/points/history/${historyMemberId.value}` : "",
-  {
-    immediate: false,
-    watch: false, // Don't auto-watch, we'll manually refresh
-  }
-);
+  data: PointTransaction[]
+}>(() => (historyMemberId.value ? `/api/points/history/${historyMemberId.value}` : ''), {
+  immediate: false,
+  watch: false, // Don't auto-watch, we'll manually refresh
+})
 
-const pointHistory = computed(() => historyData.value?.data || []);
+const pointHistory = computed(() => historyData.value?.data || [])
 
 // Watch for member selection to fetch history
-watch(selectedMember, async (member) => {
+watch(selectedMember, async member => {
   if (member) {
-    historyMemberId.value = member.id;
-    await refreshHistory();
+    historyMemberId.value = member.id
+    await refreshHistory()
   } else {
-    historyMemberId.value = null;
+    historyMemberId.value = null
   }
-});
+})
 
 function selectMember(member: LeaderboardMember) {
-  selectedMember.value = member;
+  selectedMember.value = member
 }
 
 function closeMemberDetail() {
-  selectedMember.value = null;
-  showRedeemConfirm.value = false;
+  selectedMember.value = null
+  showRedeemConfirm.value = false
 }
 
 // Handle redeem button click
 function handleRedeemClick() {
   if (isAuthenticated.value) {
     // Already authenticated, show confirmation
-    showRedeemConfirm.value = true;
+    showRedeemConfirm.value = true
   } else {
     // Need to authenticate first
-    showAuthModal.value = true;
-    authCredential.value = "";
-    authError.value = "";
+    showAuthModal.value = true
+    authCredential.value = ''
+    authError.value = ''
   }
 }
 
 // Handle auth submission
 async function handleAuthSubmit() {
-  if (!authCredential.value) return;
+  if (!authCredential.value) return
 
-  authLoading.value = true;
-  authError.value = "";
+  authLoading.value = true
+  authError.value = ''
 
-  const result = await verify(authCredential.value);
+  const result = await verify(authCredential.value)
 
-  authLoading.value = false;
+  authLoading.value = false
 
   if (result.success) {
-    showAuthModal.value = false;
-    authCredential.value = "";
+    showAuthModal.value = false
+    authCredential.value = ''
     // Now show confirmation modal
-    showRedeemConfirm.value = true;
+    showRedeemConfirm.value = true
   } else {
-    authError.value = result.error || "Invalid credentials";
+    authError.value = result.error || 'Invalid credentials'
   }
 }
 
 // Handle redemption confirmation
 async function confirmRedeem() {
-  if (!selectedMember.value) return;
+  if (!selectedMember.value) return
 
-  redeemLoading.value = true;
+  redeemLoading.value = true
 
   try {
-    const response = await $fetch<{ data?: any; error?: string }>(
-      "/api/points/redeem",
-      {
-        method: "POST",
-        body: { familyMemberId: selectedMember.value.id },
-      }
-    );
+    const response = await $fetch<{
+      data?: { memberName: string; pointsRedeemed: number; moneyValue: string }
+      error?: string
+    }>('/api/points/redeem', {
+      method: 'POST',
+      body: { familyMemberId: selectedMember.value.id },
+    })
 
     if (response.error) {
       toast.add({
-        title: "Error",
+        title: 'Error',
         description: response.error,
-        icon: "i-heroicons-exclamation-circle",
-        color: "error",
+        icon: 'i-heroicons-exclamation-circle',
+        color: 'error',
         duration: 3000,
-      });
+      })
     } else {
       toast.add({
-        title: "Points Redeemed!",
-        description: `${response.data.memberName} redeemed ${response.data.pointsRedeemed} points for ${response.data.moneyValue}`,
-        icon: "i-heroicons-gift",
-        color: "success",
+        title: 'Points Redeemed!',
+        description: `${response.data?.memberName} redeemed ${response.data?.pointsRedeemed} points for ${response.data?.moneyValue}`,
+        icon: 'i-heroicons-gift',
+        color: 'success',
         duration: 5000,
-      });
+      })
 
       // Refresh data
-      await refreshLeaderboard();
-      await refreshHistory();
+      await refreshLeaderboard()
+      await refreshHistory()
 
       // Update selected member with new balance
-      const updatedMember = leaderboard.value.find(
-        (m) => m.id === selectedMember.value?.id
-      );
+      const updatedMember = leaderboard.value.find(m => m.id === selectedMember.value?.id)
       if (updatedMember) {
-        selectedMember.value = updatedMember;
+        selectedMember.value = updatedMember
       }
 
-      showRedeemConfirm.value = false;
+      showRedeemConfirm.value = false
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     toast.add({
-      title: "Error",
-      description: error.data?.error || "Failed to redeem points",
-      icon: "i-heroicons-exclamation-circle",
-      color: "error",
+      title: 'Error',
+      description:
+        (error as { data?: { error?: string } }).data?.error || 'Failed to redeem points',
+      icon: 'i-heroicons-exclamation-circle',
+      color: 'error',
       duration: 3000,
-    });
+    })
   } finally {
-    redeemLoading.value = false;
+    redeemLoading.value = false
   }
 }
 
 // Use centralized date formatting
-const formatDate = formatRelativeDate;
+const formatDate = formatRelativeDate
 
 function getRankEmoji(index: number) {
-  if (index === 0) return "🥇";
-  if (index === 1) return "🥈";
-  if (index === 2) return "🥉";
-  return `#${index + 1}`;
+  if (index === 0) return '🥇'
+  if (index === 1) return '🥈'
+  if (index === 2) return '🥉'
+  return `#${index + 1}`
 }
 
 function getRankClass(index: number) {
-  if (index === 0) return "ring-4 ring-yellow-400";
-  if (index === 1) return "ring-4 ring-gray-400";
-  if (index === 2) return "ring-4 ring-amber-600";
-  return "";
+  if (index === 0) return 'ring-4 ring-yellow-400'
+  if (index === 1) return 'ring-4 ring-gray-400'
+  if (index === 2) return 'ring-4 ring-amber-600'
+  return ''
 }
 </script>
 
@@ -217,9 +210,7 @@ function getRankClass(index: number) {
     <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-4 py-4">
         <div class="flex items-center justify-between">
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-            Points Leaderboard
-          </h1>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Points Leaderboard</h1>
 
           <UButton
             to="/settings"
@@ -272,9 +263,7 @@ function getRankClass(index: number) {
           name="i-heroicons-star"
           class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4"
         />
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-          No points yet
-        </h2>
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">No points yet</h2>
         <p class="text-gray-500 dark:text-gray-400 mb-6">
           Complete some chores to start earning points!
         </p>
@@ -284,20 +273,14 @@ function getRankClass(index: number) {
       <!-- Leaderboard -->
       <div v-else class="space-y-4">
         <!-- Top 3 podium (if we have at least 1) -->
-        <div
-          v-if="leaderboard.length > 0"
-          class="flex justify-center items-end gap-4 mb-8 pt-8"
-        >
+        <div v-if="leaderboard.length > 0" class="flex justify-center items-end gap-4 mb-8 pt-8">
           <!-- Second place -->
           <div
             v-if="leaderboard[1]"
             class="flex flex-col items-center cursor-pointer"
             @click="selectMember(leaderboard[1])"
           >
-            <div
-              class="w-16 h-16 rounded-full overflow-hidden mb-2"
-              :class="getRankClass(1)"
-            >
+            <div class="w-16 h-16 rounded-full overflow-hidden mb-2" :class="getRankClass(1)">
               <img
                 :src="leaderboard[1].avatarUrl"
                 :alt="leaderboard[1].name"
@@ -305,12 +288,8 @@ function getRankClass(index: number) {
               />
             </div>
             <span class="text-2xl">🥈</span>
-            <span class="font-medium text-sm mt-1">{{
-              leaderboard[1].name
-            }}</span>
-            <span
-              class="text-lg font-bold text-primary-600 dark:text-primary-400"
-            >
+            <span class="font-medium text-sm mt-1">{{ leaderboard[1].name }}</span>
+            <span class="text-lg font-bold text-primary-600 dark:text-primary-400">
               {{ leaderboard[1].totalPoints }} pts
             </span>
           </div>
@@ -321,10 +300,7 @@ function getRankClass(index: number) {
             class="flex flex-col items-center cursor-pointer -mt-4"
             @click="selectMember(leaderboard[0])"
           >
-            <div
-              class="w-20 h-20 rounded-full overflow-hidden mb-2"
-              :class="getRankClass(0)"
-            >
+            <div class="w-20 h-20 rounded-full overflow-hidden mb-2" :class="getRankClass(0)">
               <img
                 :src="leaderboard[0].avatarUrl"
                 :alt="leaderboard[0].name"
@@ -333,9 +309,7 @@ function getRankClass(index: number) {
             </div>
             <span class="text-3xl">🥇</span>
             <span class="font-semibold mt-1">{{ leaderboard[0].name }}</span>
-            <span
-              class="text-xl font-bold text-primary-600 dark:text-primary-400"
-            >
+            <span class="text-xl font-bold text-primary-600 dark:text-primary-400">
               {{ leaderboard[0].totalPoints }} pts
             </span>
           </div>
@@ -346,10 +320,7 @@ function getRankClass(index: number) {
             class="flex flex-col items-center cursor-pointer"
             @click="selectMember(leaderboard[2])"
           >
-            <div
-              class="w-16 h-16 rounded-full overflow-hidden mb-2"
-              :class="getRankClass(2)"
-            >
+            <div class="w-16 h-16 rounded-full overflow-hidden mb-2" :class="getRankClass(2)">
               <img
                 :src="leaderboard[2].avatarUrl"
                 :alt="leaderboard[2].name"
@@ -357,12 +328,8 @@ function getRankClass(index: number) {
               />
             </div>
             <span class="text-2xl">🥉</span>
-            <span class="font-medium text-sm mt-1">{{
-              leaderboard[2].name
-            }}</span>
-            <span
-              class="text-lg font-bold text-primary-600 dark:text-primary-400"
-            >
+            <span class="font-medium text-sm mt-1">{{ leaderboard[2].name }}</span>
+            <span class="text-lg font-bold text-primary-600 dark:text-primary-400">
               {{ leaderboard[2].totalPoints }} pts
             </span>
           </div>
@@ -397,26 +364,19 @@ function getRankClass(index: number) {
               <!-- Name -->
               <div class="flex-1">
                 <div class="font-medium">{{ member.name }}</div>
-                <div v-if="member.isAdmin" class="text-xs text-gray-500">
-                  Admin
-                </div>
+                <div v-if="member.isAdmin" class="text-xs text-gray-500">Admin</div>
               </div>
 
               <!-- Points -->
               <div class="text-right">
-                <div
-                  class="text-xl font-bold text-primary-600 dark:text-primary-400"
-                >
+                <div class="text-xl font-bold text-primary-600 dark:text-primary-400">
                   {{ member.totalPoints }}
                 </div>
                 <div class="text-xs text-gray-500">points</div>
               </div>
 
               <!-- Chevron -->
-              <UIcon
-                name="i-heroicons-chevron-right"
-                class="w-5 h-5 text-gray-400"
-              />
+              <UIcon name="i-heroicons-chevron-right" class="w-5 h-5 text-gray-400" />
             </div>
           </div>
         </UCard>
@@ -430,9 +390,7 @@ function getRankClass(index: number) {
     <UModal
       :open="!!selectedMember && !showRedeemConfirm && !showAuthModal"
       :title="selectedMember?.name || 'Member Details'"
-      :description="`View points and history for ${
-        selectedMember?.name || 'member'
-      }`"
+      :description="`View points and history for ${selectedMember?.name || 'member'}`"
       @close="closeMemberDetail"
     >
       <template #content>
@@ -451,9 +409,7 @@ function getRankClass(index: number) {
               </div>
               <div>
                 <h3 class="text-xl font-semibold">{{ selectedMember.name }}</h3>
-                <div
-                  class="text-2xl font-bold text-primary-600 dark:text-primary-400"
-                >
+                <div class="text-2xl font-bold text-primary-600 dark:text-primary-400">
                   {{ selectedMember.totalPoints }} points
                 </div>
                 <div class="text-sm text-gray-500">
@@ -465,10 +421,7 @@ function getRankClass(index: number) {
 
           <h4 class="font-semibold mb-3">Recent Activity</h4>
 
-          <div
-            v-if="pointHistory.length === 0"
-            class="text-center py-6 text-gray-500"
-          >
+          <div v-if="pointHistory.length === 0" class="text-center py-6 text-gray-500">
             No point history yet
           </div>
 
@@ -485,32 +438,19 @@ function getRankClass(index: number) {
                       ? 'i-heroicons-plus-circle'
                       : 'i-heroicons-minus-circle'
                   "
-                  :class="
-                    transaction.type === 'earned'
-                      ? 'text-green-500'
-                      : 'text-red-500'
-                  "
+                  :class="transaction.type === 'earned' ? 'text-green-500' : 'text-red-500'"
                   class="w-5 h-5"
                 />
-                <span class="text-sm">{{
-                  transaction.description || "Points transaction"
-                }}</span>
+                <span class="text-sm">{{ transaction.description || 'Points transaction' }}</span>
               </div>
               <div class="flex items-center gap-2">
                 <span
                   class="font-bold"
-                  :class="
-                    transaction.type === 'earned'
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                  "
+                  :class="transaction.type === 'earned' ? 'text-green-600' : 'text-red-600'"
                 >
-                  {{ transaction.type === "earned" ? "+" : "-"
-                  }}{{ transaction.amount }}
+                  {{ transaction.type === 'earned' ? '+' : '-' }}{{ transaction.amount }}
                 </span>
-                <span class="text-xs text-gray-500">{{
-                  formatDate(transaction.createdAt)
-                }}</span>
+                <span class="text-xs text-gray-500">{{ formatDate(transaction.createdAt) }}</span>
               </div>
             </div>
           </div>
@@ -526,13 +466,7 @@ function getRankClass(index: number) {
                 Redeem All Points
               </UButton>
               <div class="flex-1" />
-              <UButton
-                variant="ghost"
-                color="neutral"
-                @click="closeMemberDetail"
-              >
-                Close
-              </UButton>
+              <UButton variant="ghost" color="neutral" @click="closeMemberDetail"> Close </UButton>
             </div>
           </template>
         </UCard>
@@ -550,9 +484,7 @@ function getRankClass(index: number) {
         <UCard>
           <template #header>
             <h3 class="text-lg font-semibold">Admin Authentication Required</h3>
-            <p class="text-sm text-gray-500">
-              Enter your password to redeem points
-            </p>
+            <p class="text-sm text-gray-500">Enter your password to redeem points</p>
           </template>
 
           <form @submit.prevent="handleAuthSubmit">
@@ -569,11 +501,7 @@ function getRankClass(index: number) {
 
           <template #footer>
             <div class="flex justify-end gap-3">
-              <UButton
-                variant="ghost"
-                color="neutral"
-                @click="showAuthModal = false"
-              >
+              <UButton variant="ghost" color="neutral" @click="showAuthModal = false">
                 Cancel
               </UButton>
               <UButton
@@ -620,14 +548,10 @@ function getRankClass(index: number) {
 
           <div class="space-y-4">
             <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-center">
-              <div
-                class="text-3xl font-bold text-primary-600 dark:text-primary-400"
-              >
+              <div class="text-3xl font-bold text-primary-600 dark:text-primary-400">
                 {{ selectedMember.totalPoints }} points
               </div>
-              <div
-                class="text-xl font-semibold text-gray-600 dark:text-gray-300 mt-1"
-              >
+              <div class="text-xl font-semibold text-gray-600 dark:text-gray-300 mt-1">
                 = {{ currency }} {{ selectedMemberMoneyValue }}
               </div>
             </div>

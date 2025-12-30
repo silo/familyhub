@@ -36,7 +36,7 @@ export function useSettingsAuth() {
       lastActivity.value = Date.now()
 
       return { success: true }
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Verification failed' }
     }
   }

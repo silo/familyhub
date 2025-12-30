@@ -60,7 +60,7 @@ export function useChoreCompletion() {
 
       return response.data
     } catch (error: unknown) {
-      const err = error as any
+      const err = error as { data?: { error?: string }; message?: string }
       toast.add({
         title: 'Error',
         description: err.data?.error || err.message || 'Failed to complete chore',
@@ -90,7 +90,7 @@ export function useChoreCompletion() {
       lastCompletion.value = null
       return true
     } catch (error: unknown) {
-      const err = error as any
+      const err = error as { data?: { message?: string }; message?: string }
       toast.add({
         title: 'Cannot undo',
         description: err.data?.message || 'Undo window has expired',

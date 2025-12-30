@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import type { Chore, Category, FamilyMember, ChoresResponse, CategoriesResponse, MembersResponse, SettingsResponse } from '~/types'
+import type {
+  Chore,
+  Category,
+  FamilyMember,
+  ChoresResponse,
+  CategoriesResponse,
+  MembersResponse,
+  SettingsResponse,
+} from '~/types'
 import QRCode from 'qrcode'
 
 definePageMeta({
@@ -32,13 +40,17 @@ const memberOptions = computed(() => [
 
 // Modal state
 const isModalOpen = ref(false)
-const editingChore = ref<(Chore & { category?: Category | null; assignee?: FamilyMember | null }) | null>(null)
+const editingChore = ref<
+  (Chore & { category?: Category | null; assignee?: FamilyMember | null }) | null
+>(null)
 const isDeleteModalOpen = ref(false)
 const deletingChore = ref<Chore | null>(null)
 
 // QR/NFC modal state
 const isQrNfcModalOpen = ref(false)
-const selectedChoreForQrNfc = ref<(Chore & { qrToken?: string | null; nfcTagId?: string | null }) | null>(null)
+const selectedChoreForQrNfc = ref<
+  (Chore & { qrToken?: string | null; nfcTagId?: string | null }) | null
+>(null)
 const qrCodeDataUrl = ref<string | null>(null)
 const nfcTagInput = ref('')
 const nfcLoading = ref(false)
@@ -113,7 +125,7 @@ function openCreate() {
   isModalOpen.value = true
 }
 
-function openEdit(chore: typeof allChores.value[0]) {
+function openEdit(chore: (typeof allChores.value)[0]) {
   editingChore.value = chore
   form.title = chore.title
   form.description = chore.description || ''
@@ -130,9 +142,9 @@ function openEdit(chore: typeof allChores.value[0]) {
 
   // Extract day of week from recurring config
   if (chore.recurringConfig && typeof chore.recurringConfig === 'object') {
-    const config = chore.recurringConfig as any
+    const config = chore.recurringConfig as unknown as Record<string, unknown>
     if ('dayOfWeek' in config) {
-      selectedDayOfWeek.value = config.dayOfWeek
+      selectedDayOfWeek.value = config.dayOfWeek as number
     }
   }
 
@@ -207,7 +219,7 @@ async function handleSave() {
 
     isModalOpen.value = false
     await refreshChores()
-  } catch (e) {
+  } catch {
     error.value = 'Failed to save chore'
   } finally {
     loading.value = false
@@ -232,7 +244,7 @@ async function handleDelete() {
     isDeleteModalOpen.value = false
     deletingChore.value = null
     await refreshChores()
-  } catch (e) {
+  } catch {
     error.value = 'Failed to delete chore'
   } finally {
     loading.value = false
@@ -253,10 +265,10 @@ function getChoreTypeBadgeColor(chore: Chore) {
 }
 
 // QR/NFC Management functions
-async function openQrNfcModal(chore: typeof allChores.value[0]) {
+async function openQrNfcModal(chore: (typeof allChores.value)[0]) {
   selectedChoreForQrNfc.value = chore
   nfcTagInput.value = chore.nfcTagId || ''
-  
+
   // Generate QR code if chore has a qrToken
   if (chore.qrToken) {
     try {
@@ -279,7 +291,7 @@ async function openQrNfcModal(chore: typeof allChores.value[0]) {
   } else {
     qrCodeDataUrl.value = null
   }
-  
+
   isQrNfcModalOpen.value = true
 }
 
@@ -292,7 +304,7 @@ function closeQrNfcModal() {
 
 function printQrCode() {
   if (!qrCodeDataUrl.value || !selectedChoreForQrNfc.value) return
-  
+
   const printWindow = window.open('', '_blank')
   if (!printWindow) {
     toast.add({
@@ -303,7 +315,7 @@ function printQrCode() {
     })
     return
   }
-  
+
   printWindow.document.write(`
     <!DOCTYPE html>
     <html>
@@ -349,15 +361,15 @@ function printQrCode() {
 
 async function bindNfcTag() {
   if (!selectedChoreForQrNfc.value || !nfcTagInput.value.trim()) return
-  
+
   nfcLoading.value = true
-  
+
   try {
     const response = await $fetch(`/api/chores/${selectedChoreForQrNfc.value.id}/nfc`, {
       method: 'PUT',
       body: { nfcTagId: nfcTagInput.value.trim() },
     })
-    
+
     if ('error' in response) {
       toast.add({
         title: 'Error',
@@ -378,7 +390,7 @@ async function bindNfcTag() {
         selectedChoreForQrNfc.value.nfcTagId = nfcTagInput.value.trim()
       }
     }
-  } catch (err) {
+  } catch {
     toast.add({
       title: 'Error',
       description: 'Failed to bind NFC tag',
@@ -392,15 +404,15 @@ async function bindNfcTag() {
 
 async function unbindNfcTag() {
   if (!selectedChoreForQrNfc.value) return
-  
+
   nfcLoading.value = true
-  
+
   try {
     const response = await $fetch(`/api/chores/${selectedChoreForQrNfc.value.id}/nfc`, {
       method: 'PUT',
       body: { nfcTagId: null },
     })
-    
+
     if ('error' in response) {
       toast.add({
         title: 'Error',
@@ -422,7 +434,7 @@ async function unbindNfcTag() {
         nfcTagInput.value = ''
       }
     }
-  } catch (err) {
+  } catch {
     toast.add({
       title: 'Error',
       description: 'Failed to unbind NFC tag',
@@ -439,24 +451,17 @@ async function unbindNfcTag() {
   <div class="p-6">
     <div class="mb-6 flex items-center justify-between">
       <div>
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-          Chores
-        </h2>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Chores</h2>
         <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
           Manage chores and tasks for your family
         </p>
       </div>
-      <UButton icon="i-lucide-plus" @click="openCreate">
-        Add Chore
-      </UButton>
+      <UButton icon="i-lucide-plus" @click="openCreate"> Add Chore </UButton>
     </div>
 
     <!-- Chores List -->
     <div class="space-y-3">
-      <UCard
-        v-for="chore in allChores"
-        :key="chore.id"
-      >
+      <UCard v-for="chore in allChores" :key="chore.id">
         <div class="flex items-start justify-between gap-4">
           <div class="flex-1">
             <div class="flex items-center gap-2">
@@ -537,19 +542,15 @@ async function unbindNfcTag() {
       class="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center dark:border-gray-700"
     >
       <UIcon name="i-lucide-list-checks" class="mx-auto size-12 text-gray-400" />
-      <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">
-        No chores yet
-      </h3>
+      <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">No chores yet</h3>
       <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
         Create your first chore to get started
       </p>
-      <UButton class="mt-4" @click="openCreate">
-        Add Chore
-      </UButton>
+      <UButton class="mt-4" @click="openCreate"> Add Chore </UButton>
     </div>
 
     <!-- Create/Edit Modal -->
-    <UModal 
+    <UModal
       v-model:open="isModalOpen"
       :title="editingChore ? 'Edit Chore' : 'Add Chore'"
       :description="editingChore ? 'Update chore details' : 'Create a new chore'"
@@ -573,46 +574,28 @@ async function unbindNfcTag() {
           <form class="space-y-4" @submit.prevent="handleSave">
             <!-- Title -->
             <UFormField label="Title" name="title" required>
-              <UInput
-                v-model="form.title"
-                placeholder="e.g., Take out trash"
-              />
+              <UInput v-model="form.title" placeholder="e.g., Take out trash" />
             </UFormField>
 
             <!-- Description -->
             <UFormField label="Description" name="description">
-              <UTextarea
-                v-model="form.description"
-                placeholder="Optional details..."
-                :rows="2"
-              />
+              <UTextarea v-model="form.description" placeholder="Optional details..." :rows="2" />
             </UFormField>
 
             <!-- Points -->
             <UFormField label="Points" name="points">
-              <UInput
-                v-model="form.points"
-                type="number"
-                min="0"
-                icon="i-lucide-coins"
-              />
+              <UInput v-model="form.points" type="number" min="0" icon="i-lucide-coins" />
             </UFormField>
 
             <div class="grid gap-4 sm:grid-cols-2">
               <!-- Category -->
               <UFormField label="Category" name="categoryId">
-                <USelect
-                  v-model="form.categoryId"
-                  :items="categoryOptions"
-                />
+                <USelect v-model="form.categoryId" :items="categoryOptions" />
               </UFormField>
 
               <!-- Assignee -->
               <UFormField label="Assigned To" name="assigneeId">
-                <USelect
-                  v-model="form.assigneeId"
-                  :items="memberOptions"
-                />
+                <USelect v-model="form.assigneeId" :items="memberOptions" />
               </UFormField>
             </div>
 
@@ -629,15 +612,8 @@ async function unbindNfcTag() {
             </UFormField>
 
             <!-- Cooldown (for permanent chores) -->
-            <UFormField
-              v-if="form.isPermanent"
-              label="Cooldown"
-              name="cooldownType"
-            >
-              <USelect
-                v-model="form.cooldownType"
-                :items="cooldownOptions"
-              />
+            <UFormField v-if="form.isPermanent" label="Cooldown" name="cooldownType">
+              <USelect v-model="form.cooldownType" :items="cooldownOptions" />
               <UInput
                 v-if="form.cooldownType === 'hours'"
                 v-model="form.cooldownHours"
@@ -649,15 +625,8 @@ async function unbindNfcTag() {
             </UFormField>
 
             <!-- Recurring (for non-permanent) -->
-            <UFormField
-              v-if="!form.isPermanent"
-              label="Recurring Schedule"
-              name="recurringType"
-            >
-              <USelect
-                v-model="form.recurringType"
-                :items="recurringOptions"
-              />
+            <UFormField v-if="!form.isPermanent" label="Recurring Schedule" name="recurringType">
+              <USelect v-model="form.recurringType" :items="recurringOptions" />
 
               <!-- Day of week selection -->
               <USelect
@@ -671,18 +640,12 @@ async function unbindNfcTag() {
             <div class="grid gap-4 sm:grid-cols-2">
               <!-- Due Date -->
               <UFormField label="Due Date" name="dueDate">
-                <UInput
-                  v-model="form.dueDate"
-                  type="date"
-                />
+                <UInput v-model="form.dueDate" type="date" />
               </UFormField>
 
               <!-- Due Time -->
               <UFormField label="Due Time" name="dueTime">
-                <UInput
-                  v-model="form.dueTime"
-                  type="time"
-                />
+                <UInput v-model="form.dueTime" type="time" />
               </UFormField>
             </div>
 
@@ -693,28 +656,15 @@ async function unbindNfcTag() {
               name="endDate"
               hint="Chore will auto-archive after this date"
             >
-              <UInput
-                v-model="form.endDate"
-                type="date"
-              />
+              <UInput v-model="form.endDate" type="date" />
             </UFormField>
 
             <!-- Error -->
-            <UAlert
-              v-if="error"
-              color="error"
-              icon="i-lucide-alert-circle"
-              :title="error"
-            />
+            <UAlert v-if="error" color="error" icon="i-lucide-alert-circle" :title="error" />
 
             <!-- Actions -->
             <div class="flex justify-end gap-2 pt-4">
-              <UButton
-                type="button"
-                color="neutral"
-                variant="outline"
-                @click="isModalOpen = false"
-              >
+              <UButton type="button" color="neutral" variant="outline" @click="isModalOpen = false">
                 Cancel
               </UButton>
               <UButton type="submit" :loading="loading">
@@ -727,7 +677,7 @@ async function unbindNfcTag() {
     </UModal>
 
     <!-- Delete Confirmation Modal -->
-    <UModal 
+    <UModal
       v-model:open="isDeleteModalOpen"
       title="Delete Chore"
       :description="`Delete ${deletingChore?.title || 'this chore'}`"
@@ -735,32 +685,20 @@ async function unbindNfcTag() {
       <template #content>
         <UCard>
           <template #header>
-            <h3 class="text-lg font-semibold text-error-600">
-              Delete Chore
-            </h3>
+            <h3 class="text-lg font-semibold text-error-600">Delete Chore</h3>
           </template>
 
           <p class="text-gray-600 dark:text-gray-400">
-            Are you sure you want to delete <strong>{{ deletingChore?.title }}</strong>?
-            This will archive the chore but preserve completion history.
+            Are you sure you want to delete <strong>{{ deletingChore?.title }}</strong
+            >? This will archive the chore but preserve completion history.
           </p>
 
           <template #footer>
             <div class="flex justify-end gap-2">
-              <UButton
-                color="neutral"
-                variant="outline"
-                @click="isDeleteModalOpen = false"
-              >
+              <UButton color="neutral" variant="outline" @click="isDeleteModalOpen = false">
                 Cancel
               </UButton>
-              <UButton
-                color="error"
-                :loading="loading"
-                @click="handleDelete"
-              >
-                Delete
-              </UButton>
+              <UButton color="error" :loading="loading" @click="handleDelete"> Delete </UButton>
             </div>
           </template>
         </UCard>
@@ -777,15 +715,8 @@ async function unbindNfcTag() {
         <UCard>
           <template #header>
             <div class="flex items-center justify-between">
-              <h3 class="text-lg font-semibold">
-                QR Code & NFC Tag
-              </h3>
-              <UButton
-                color="neutral"
-                variant="ghost"
-                icon="i-lucide-x"
-                @click="closeQrNfcModal"
-              />
+              <h3 class="text-lg font-semibold">QR Code & NFC Tag</h3>
+              <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="closeQrNfcModal" />
             </div>
           </template>
 
@@ -796,7 +727,7 @@ async function unbindNfcTag() {
                 <UIcon name="i-lucide-qr-code" class="size-5" />
                 QR Code
               </h4>
-              
+
               <div v-if="qrCodeDataUrl" class="flex flex-col items-center gap-4">
                 <div class="rounded-lg border bg-white p-4">
                   <img :src="qrCodeDataUrl" alt="QR Code" class="h-48 w-48" />
@@ -804,20 +735,17 @@ async function unbindNfcTag() {
                 <p class="text-center text-sm text-gray-500">
                   Scan this QR code to complete the chore
                 </p>
-                <UButton
-                  icon="i-lucide-printer"
-                  variant="outline"
-                  @click="printQrCode"
-                >
+                <UButton icon="i-lucide-printer" variant="outline" @click="printQrCode">
                   Print QR Code
                 </UButton>
               </div>
-              
-              <div v-else class="rounded-lg border-2 border-dashed border-gray-300 p-6 text-center dark:border-gray-700">
+
+              <div
+                v-else
+                class="rounded-lg border-2 border-dashed border-gray-300 p-6 text-center dark:border-gray-700"
+              >
                 <UIcon name="i-lucide-alert-circle" class="mx-auto size-8 text-gray-400" />
-                <p class="mt-2 text-sm text-gray-500">
-                  No QR token generated for this chore.
-                </p>
+                <p class="mt-2 text-sm text-gray-500">No QR token generated for this chore.</p>
               </div>
             </div>
 
@@ -829,9 +757,11 @@ async function unbindNfcTag() {
                 <UIcon name="i-lucide-nfc" class="size-5" />
                 NFC Tag
               </h4>
-              
+
               <div v-if="selectedChoreForQrNfc?.nfcTagId" class="space-y-3">
-                <div class="flex items-center gap-2 rounded-lg bg-success-50 p-3 dark:bg-success-900/20">
+                <div
+                  class="flex items-center gap-2 rounded-lg bg-success-50 p-3 dark:bg-success-900/20"
+                >
                   <UIcon name="i-lucide-check-circle" class="size-5 text-success-600" />
                   <div class="flex-1">
                     <p class="text-sm font-medium text-success-800 dark:text-success-200">
@@ -852,17 +782,14 @@ async function unbindNfcTag() {
                   Unbind NFC Tag
                 </UButton>
               </div>
-              
+
               <div v-else class="space-y-3">
                 <p class="text-sm text-gray-500">
-                  Enter the NFC tag ID to bind it to this chore. You can find this ID by scanning the tag with your mobile app.
+                  Enter the NFC tag ID to bind it to this chore. You can find this ID by scanning
+                  the tag with your mobile app.
                 </p>
                 <div class="flex gap-2">
-                  <UInput
-                    v-model="nfcTagInput"
-                    placeholder="Enter NFC tag ID..."
-                    class="flex-1"
-                  />
+                  <UInput v-model="nfcTagInput" placeholder="Enter NFC tag ID..." class="flex-1" />
                   <UButton
                     icon="i-lucide-link"
                     :loading="nfcLoading"
@@ -878,13 +805,7 @@ async function unbindNfcTag() {
 
           <template #footer>
             <div class="flex justify-end">
-              <UButton
-                color="neutral"
-                variant="outline"
-                @click="closeQrNfcModal"
-              >
-                Close
-              </UButton>
+              <UButton color="neutral" variant="outline" @click="closeQrNfcModal"> Close </UButton>
             </div>
           </template>
         </UCard>

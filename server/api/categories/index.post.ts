@@ -4,11 +4,15 @@ import { db, categories } from '../../db'
 
 const createSchema = z.object({
   name: z.string().min(1, 'Name is required').max(50),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).nullable().optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .nullable()
+    .optional(),
   icon: z.string().max(50).nullable().optional(),
 })
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async event => {
   const body = await readBody(event)
   const result = createSchema.safeParse(body)
 
@@ -33,8 +37,8 @@ export default defineEventHandler(async (event) => {
     return {
       data: newCategory,
     }
-  } catch (error: any) {
-    if (error?.code === '23505') {
+  } catch (error: unknown) {
+    if ((error as { code?: string })?.code === '23505') {
       return { error: 'A category with this name already exists' }
     }
     console.error('Failed to create category:', error)
