@@ -3,7 +3,7 @@
 import type { PointsHistoryResponse } from '~/types'
 
 definePageMeta({
-  layout: 'default',
+  layout: 'mobile',
 })
 
 const { user, isAuthenticated, logout, loadSession, isLoading, getAuthHeaders } = useMobileAuth()
@@ -75,22 +75,22 @@ function getAvatarUrl() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+  <div class="flex h-full flex-col bg-gray-50 dark:bg-gray-900">
     <!-- Loading State -->
-    <div v-if="isLoading" class="flex min-h-screen items-center justify-center">
+    <div v-if="isLoading" class="flex flex-1 items-center justify-center">
       <UIcon name="i-lucide-loader-2" class="h-8 w-8 animate-spin text-primary" />
     </div>
 
-    <div v-else-if="isAuthenticated" class="flex min-h-screen flex-col">
+    <template v-else-if="isAuthenticated">
       <!-- Header -->
-      <header class="border-b border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+      <header class="shrink-0 border-b border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
         <h1 class="text-xl font-bold text-gray-900 dark:text-white">
           Profile
         </h1>
       </header>
 
       <!-- Main Content -->
-      <main class="flex-1 p-6">
+      <main class="flex-1 overflow-y-auto p-6">
         <!-- User Card -->
         <UCard class="mb-6">
           <div class="flex items-center gap-4">
@@ -208,7 +208,7 @@ function getAvatarUrl() {
       </main>
 
       <!-- Bottom Navigation -->
-      <nav class="border-t border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+      <nav class="shrink-0 border-t border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
         <div class="flex justify-around py-3">
           <NuxtLink
             to="/mobile/scan"
@@ -233,6 +233,6 @@ function getAvatarUrl() {
           </NuxtLink>
         </div>
       </nav>
-    </div>
+    </template>
   </div>
 </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Mobile scan page - main screen for QR/NFC scanning
 definePageMeta({
-  layout: 'default',
+  layout: 'mobile',
 })
 
 const { user, isAuthenticated, logout, loadSession, isLoading: authLoading } = useMobileAuth()
@@ -113,15 +113,15 @@ function getAvatarUrl() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+  <div class="flex h-full flex-col bg-gray-50 dark:bg-gray-900">
     <!-- Loading State -->
-    <div v-if="authLoading" class="flex min-h-screen items-center justify-center">
+    <div v-if="authLoading" class="flex flex-1 items-center justify-center">
       <UIcon name="i-lucide-loader-2" class="h-8 w-8 animate-spin text-primary" />
     </div>
 
-    <div v-else-if="isAuthenticated" class="flex min-h-screen flex-col">
+    <template v-else-if="isAuthenticated">
       <!-- Header -->
-      <header class="border-b border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+      <header class="shrink-0 border-b border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
             <img
@@ -249,7 +249,7 @@ function getAvatarUrl() {
       </main>
 
       <!-- Bottom Navigation -->
-      <nav class="border-t border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+      <nav class="shrink-0 border-t border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
         <div class="flex justify-around py-3">
           <NuxtLink to="/mobile/scan" class="flex flex-col items-center text-primary">
             <UIcon name="i-lucide-scan" class="h-6 w-6" />
@@ -271,7 +271,7 @@ function getAvatarUrl() {
           </NuxtLink>
         </div>
       </nav>
-    </div>
+    </template>
   </div>
 </template>
 

@@ -1,3 +1,4 @@
+/// <reference types="@capacitor/cli" />
 import type { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
@@ -11,8 +12,12 @@ const config: CapacitorConfig = {
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,
-      backgroundColor: '#ffffff',
+      backgroundColor: '#f9fafb',
       showSpinner: false,
+    },
+    // Hide system bars (status bar + navigation bar) for immersive experience
+    SystemBars: {
+      hidden: true,
     },
   },
   ios: {

@@ -3,7 +3,7 @@
 import { formatRelativeDate } from '~/utils/date'
 
 definePageMeta({
-  layout: 'default',
+  layout: false,
 })
 
 const toast = useToast()
@@ -205,26 +205,28 @@ function getRankClass(index: number) {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+  <NuxtLayout name="app">
     <!-- Header -->
-    <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
-      <div class="max-w-7xl mx-auto px-4 py-4">
-        <div class="flex items-center justify-between">
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Points Leaderboard</h1>
+    <template #header>
+      <header class="bg-white dark:bg-gray-800 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+          <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Points Leaderboard</h1>
 
-          <UButton
-            to="/settings"
-            variant="ghost"
-            color="neutral"
-            icon="i-heroicons-cog-6-tooth"
-            size="sm"
-          />
+            <UButton
+              to="/settings"
+              variant="ghost"
+              color="neutral"
+              icon="i-heroicons-cog-6-tooth"
+              size="sm"
+            />
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </template>
 
     <!-- Main content -->
-    <main class="max-w-7xl mx-auto px-4 py-6">
+    <div class="max-w-7xl mx-auto px-4 py-6">
       <!-- Loading state -->
       <div v-if="status === 'pending'" class="space-y-4">
         <!-- Podium skeleton -->
@@ -381,10 +383,7 @@ function getRankClass(index: number) {
           </div>
         </UCard>
       </div>
-    </main>
-
-    <!-- Bottom navigation -->
-    <UiBottomNavigation />
+    </div>
 
     <!-- Member detail modal -->
     <UModal
@@ -588,11 +587,5 @@ function getRankClass(index: number) {
         </UCard>
       </template>
     </UModal>
-  </div>
+  </NuxtLayout>
 </template>
-
-<style scoped>
-.safe-area-pb {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-</style>

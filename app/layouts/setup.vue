@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  <div class="min-h-screen bg-muted flex items-center justify-center p-4">
+  <div class="h-dvh bg-muted flex items-center justify-center p-4 overflow-auto">
     <div class="w-full max-w-md">
       <slot />
     </div>

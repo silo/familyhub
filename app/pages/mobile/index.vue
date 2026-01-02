@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Mobile app entry point - redirects to setup or login
 definePageMeta({
-  layout: false,
+  layout: 'mobile',
 })
 
 const { loadConfig, isConfigured } = useMobileConfig()

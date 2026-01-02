@@ -7,7 +7,7 @@ import {
 } from "~/utils/cooldown";
 
 definePageMeta({
-  layout: "default",
+  layout: false,
 });
 
 // View mode: card or list
@@ -121,61 +121,63 @@ async function handleMemberSelected(memberId: number) {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+  <NuxtLayout name="app">
     <!-- Header -->
-    <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
-      <div class="max-w-7xl mx-auto px-4 py-4">
-        <div class="flex items-center justify-between">
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-            Chores
-          </h1>
+    <template #header>
+      <header class="bg-white dark:bg-gray-800 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+          <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+              Chores
+            </h1>
 
-          <div class="flex items-center gap-3">
-            <!-- View toggle -->
-            <UFieldGroup>
-              <UButton
-                :color="viewMode === 'card' ? 'primary' : 'neutral'"
-                :variant="viewMode === 'card' ? 'solid' : 'ghost'"
-                icon="i-heroicons-squares-2x2"
-                size="sm"
-                @click="viewMode = 'card'"
-              />
-              <UButton
-                :color="viewMode === 'list' ? 'primary' : 'neutral'"
-                :variant="viewMode === 'list' ? 'solid' : 'ghost'"
-                icon="i-heroicons-list-bullet"
-                size="sm"
-                @click="viewMode = 'list'"
-              />
-            </UFieldGroup>
+            <div class="flex items-center gap-3">
+              <!-- View toggle -->
+              <UFieldGroup>
+                <UButton
+                  :color="viewMode === 'card' ? 'primary' : 'neutral'"
+                  :variant="viewMode === 'card' ? 'solid' : 'ghost'"
+                  icon="i-heroicons-squares-2x2"
+                  size="sm"
+                  @click="viewMode = 'card'"
+                />
+                <UButton
+                  :color="viewMode === 'list' ? 'primary' : 'neutral'"
+                  :variant="viewMode === 'list' ? 'solid' : 'ghost'"
+                  icon="i-heroicons-list-bullet"
+                  size="sm"
+                  @click="viewMode = 'list'"
+                />
+              </UFieldGroup>
 
-            <!-- Settings link -->
-            <UButton
-              to="/settings"
-              variant="ghost"
-              color="neutral"
-              icon="i-heroicons-cog-6-tooth"
-              size="sm"
-            />
+              <!-- Settings link -->
+              <UButton
+                to="/settings"
+                variant="ghost"
+                color="neutral"
+                icon="i-heroicons-cog-6-tooth"
+                size="sm"
+              />
+            </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
 
-    <!-- Family member filter -->
-    <div
-      class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
-    >
-      <div class="max-w-7xl mx-auto px-4 py-3">
-        <FamilyMemberFilter
-          v-model="selectedMemberId"
-          :members="familyMembers"
-        />
+      <!-- Family member filter -->
+      <div
+        class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+      >
+        <div class="max-w-7xl mx-auto px-4 py-3">
+          <FamilyMemberFilter
+            v-model="selectedMemberId"
+            :members="familyMembers"
+          />
+        </div>
       </div>
-    </div>
+    </template>
 
     <!-- Main content -->
-    <main class="max-w-7xl mx-auto px-4 py-6">
+    <div class="max-w-7xl mx-auto px-4 py-6">
       <!-- Loading state -->
       <div v-if="isLoading">
         <!-- Card view skeleton -->
@@ -246,10 +248,7 @@ async function handleMemberSelected(memberId: number) {
           />
         </div>
       </div>
-    </main>
-
-    <!-- Bottom navigation -->
-    <UiBottomNavigation />
+    </div>
 
     <!-- Celebration animation -->
     <UiCelebrationAnimation
@@ -269,11 +268,5 @@ async function handleMemberSelected(memberId: number) {
       "
       @select="handleMemberSelected"
     />
-  </div>
+  </NuxtLayout>
 </template>
-
-<style scoped>
-.safe-area-pb {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-</style>

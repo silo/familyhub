@@ -16,10 +16,10 @@ function isActive(path: string) {
 
 <template>
   <nav
-    class="fixed bottom-0 inset-x-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 safe-area-pb z-50"
+    class="shrink-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50 h-16"
   >
-    <div class="max-w-7xl mx-auto px-4">
-      <div class="flex items-center justify-around py-2">
+    <div class="max-w-7xl mx-auto px-4 h-full">
+      <div class="flex items-center justify-around h-full">
         <NuxtLink
           v-for="item in navItems"
           :key="item.to"
@@ -38,9 +38,3 @@ function isActive(path: string) {
     </div>
   </nav>
 </template>
-
-<style scoped>
-.safe-area-pb {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-</style>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Mobile server setup page - First screen on fresh app install
 definePageMeta({
-  layout: false,
+  layout: 'mobile',
 })
 
 const { setServerUrl, isConfigured } = useMobileConfig()

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Mobile login page
 definePageMeta({
-  layout: 'setup',
+  layout: 'mobile',
 })
 
 const { login, isAuthenticated, isLoading, loadSession } = useMobileAuth()

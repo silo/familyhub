@@ -1,9 +1,9 @@
 <script setup lang="ts">
-// Default layout - used for dashboard and main app pages
+// Default layout - minimal fallback layout
 </script>
 
 <template>
-  <div class="min-h-screen bg-muted">
+  <div class="h-dvh bg-muted overflow-auto">
     <slot />
   </div>
 </template>
