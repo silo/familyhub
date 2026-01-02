@@ -8,7 +8,7 @@ A self-hosted family chore management app designed for shared family tablets.
 docker run -d \
   --name familyhub \
   -e DATABASE_URL=postgresql://user:password@host:5432/familyhub \
-  -p 3000:3000 \
+  -p 4444:3000 \
   YOUR_USERNAME/familyhub:latest
 ```
 
@@ -35,7 +35,7 @@ services:
     environment:
       DATABASE_URL: postgresql://familyhub:changeme@db:5432/familyhub
     ports:
-      - "3000:3000"
+      - "4444:3000"
     volumes:
       - uploads:/app/public/uploads
     depends_on:
@@ -60,7 +60,7 @@ volumes:
 
 ## Ports
 
-- `3000` - Web interface
+- `4444` - Web interface (default, configurable via APP_PORT)
 
 ## Tags
 

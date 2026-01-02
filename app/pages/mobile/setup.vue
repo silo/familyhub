@@ -13,8 +13,8 @@ const error = ref('')
 
 // Example URLs for user reference
 const exampleUrls = [
-  'http://192.168.1.100:3000',
-  'http://familyhub.local:3000',
+  'http://192.168.1.100:4444',
+  'http://familyhub.local:4444',
   'https://familyhub.example.com',
 ]
 
@@ -71,7 +71,7 @@ onMounted(async () => {
             <UInput
               v-model="serverUrl"
               type="url"
-              placeholder="http://192.168.1.100:3000"
+              placeholder="http://192.168.1.100:4444"
               size="lg"
               autofocus
               :disabled="loading"

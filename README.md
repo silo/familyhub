@@ -104,7 +104,7 @@ curl -O https://raw.githubusercontent.com/YOUR_USERNAME/familyhub/main/docker-co
 docker compose up -d
 
 # Open your browser
-open http://localhost:3000
+open http://localhost:4444
 ```
 
 That's it! On first launch, you'll be guided through the setup wizard to create your admin account and family members.
@@ -149,7 +149,7 @@ services:
       DATABASE_URL: postgresql://familyhub:your_secure_password_here@db:5432/familyhub
       NODE_ENV: production
     ports:
-      - "3000:3000"
+      - "4444:3000"
     volumes:
       - uploads:/app/public/uploads
     depends_on:
@@ -169,7 +169,7 @@ docker compose up -d
 
 **3. Access the app:**
 
-Open `http://your-server-ip:3000` in your browser.
+Open `http://your-server-ip:4444` in your browser.
 
 ---
 
@@ -202,7 +202,7 @@ docker run -d \
   --network familyhub-network \
   -e DATABASE_URL=postgresql://familyhub:your_secure_password_here@familyhub-db:5432/familyhub \
   -e NODE_ENV=production \
-  -p 3000:3000 \
+  -p 4444:3000 \
   -v familyhub_uploads:/app/public/uploads \
   YOUR_DOCKERHUB_USERNAME/familyhub:latest
 ```
@@ -259,7 +259,7 @@ For production deployments, use a reverse proxy like **Nginx** or **Caddy**.
 
 ```
 familyhub.yourdomain.com {
-    reverse_proxy localhost:3000
+    reverse_proxy localhost:4444
 }
 ```
 
