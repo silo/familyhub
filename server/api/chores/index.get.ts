@@ -11,7 +11,11 @@ export default defineEventHandler(async event => {
       where: includeDeleted ? undefined : isNull(chores.deletedAt),
       with: {
         category: true,
-        assignee: true,
+        assignees: {
+          with: {
+            familyMember: true,
+          },
+        },
       },
       orderBy: [desc(chores.createdAt)],
     })

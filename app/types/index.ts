@@ -86,7 +86,6 @@ export interface Chore {
   description: string | null
   points: number
   categoryId: number | null
-  assigneeId: number | null
   isPermanent: boolean
   recurringType: string | null
   recurringConfig: RecurringConfig | null
@@ -100,6 +99,14 @@ export interface Chore {
   deletedAt: Date | null
   createdAt: Date
   updatedAt: Date
+}
+
+export interface ChoreAssignee {
+  id: number
+  choreId: number
+  familyMemberId: number
+  createdAt: Date
+  familyMember?: FamilyMember
 }
 
 export interface ChoreCompletion {
@@ -208,7 +215,6 @@ export interface ChoreWithRelations {
   description: string | null
   points: number
   categoryId: number | null
-  assigneeId: number | null
   type: 'one-time' | 'permanent' | 'recurring'
   recurringConfig: RecurringConfig | null
   dueDate: string | null
@@ -225,7 +231,7 @@ export interface ChoreWithRelations {
     color: string | null
     icon: string | null
   } | null
-  assignee?: FamilyMemberWithAvatar | null
+  assignees?: ChoreAssignee[]
   lastCompletion?: ChoreCompletion | null
 }
 

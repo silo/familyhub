@@ -13,10 +13,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   // Check if setup is complete
+  // Use $fetch instead of useFetch to avoid caching issues after setup completion
   try {
-    const { data } = await useFetch('/api/setup/status')
+    const response = await $fetch('/api/setup/status')
 
-    if (!data.value?.data?.isSetupComplete) {
+    if (!response?.data?.isSetupComplete) {
       return navigateTo('/setup')
     }
   } catch (error) {

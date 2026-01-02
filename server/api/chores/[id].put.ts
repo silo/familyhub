@@ -1,7 +1,7 @@
 // server/api/chores/[id].put.ts
 import { z } from 'zod'
 import { eq } from 'drizzle-orm'
-import { db, chores } from '../../db'
+import { db, chores, choreAssignees } from '../../db'
 
 const recurringConfigSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('daily') }),
@@ -16,7 +16,7 @@ const updateSchema = z.object({
   description: z.string().max(1000).nullable().optional(),
   points: z.coerce.number().int().min(0).default(0),
   categoryId: z.coerce.number().int().positive().nullable().optional(),
-  assigneeId: z.coerce.number().int().positive().nullable().optional(),
+  assigneeIds: z.array(z.coerce.number().int().positive()).default([]),
   isPermanent: z.boolean().default(false),
   recurringType: z.enum(['daily', 'weekly', 'biweekly', 'custom']).nullable().optional(),
   recurringConfig: recurringConfigSchema.nullable().optional(),
@@ -43,6 +43,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const data = result.data
+  const choreId = Number(id)
 
   try {
     const [updated] = await db
@@ -52,7 +53,6 @@ export default defineEventHandler(async (event) => {
         description: data.description || null,
         points: data.points,
         categoryId: data.categoryId || null,
-        assigneeId: data.assigneeId || null,
         isPermanent: data.isPermanent,
         recurringType: data.recurringType || null,
         recurringConfig: data.recurringConfig || null,
@@ -63,11 +63,23 @@ export default defineEventHandler(async (event) => {
         cooldownHours: data.cooldownType === 'hours' ? data.cooldownHours : null,
         updatedAt: new Date(),
       })
-      .where(eq(chores.id, Number(id)))
+      .where(eq(chores.id, choreId))
       .returning()
 
     if (!updated) {
       return { error: 'Chore not found' }
+    }
+
+    // Update assignees: delete existing and insert new
+    await db.delete(choreAssignees).where(eq(choreAssignees.choreId, choreId))
+    
+    if (data.assigneeIds.length > 0) {
+      await db.insert(choreAssignees).values(
+        data.assigneeIds.map((familyMemberId) => ({
+          choreId,
+          familyMemberId,
+        }))
+      )
     }
 
     return { data: updated }

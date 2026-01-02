@@ -48,7 +48,7 @@ export const familyMembers = pgTable('family_members', {
 })
 
 export const familyMembersRelations = relations(familyMembers, ({ many }) => ({
-  assignedChores: many(chores),
+  choreAssignments: many(choreAssignees),
   choreCompletions: many(choreCompletions),
   pointTransactions: many(pointTransactions),
   activityLogs: many(activityLog),
@@ -136,12 +136,41 @@ export const choresRelations = relations(chores, ({ one, many }) => ({
     fields: [chores.categoryId],
     references: [categories.id],
   }),
-  assignee: one(familyMembers, {
-    fields: [chores.assigneeId],
-    references: [familyMembers.id],
-  }),
+  assignees: many(choreAssignees),
   completions: many(choreCompletions),
   activityLogs: many(activityLog),
+}))
+
+// ============================================================================
+// Chore Assignees Junction Table (many-to-many)
+// ============================================================================
+export const choreAssignees = pgTable(
+  'chore_assignees',
+  {
+    id: serial('id').primaryKey(),
+    choreId: integer('chore_id')
+      .notNull()
+      .references(() => chores.id, { onDelete: 'cascade' }),
+    familyMemberId: integer('family_member_id')
+      .notNull()
+      .references(() => familyMembers.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_chore_assignees_chore').on(table.choreId),
+    index('idx_chore_assignees_member').on(table.familyMemberId),
+  ]
+)
+
+export const choreAssigneesRelations = relations(choreAssignees, ({ one }) => ({
+  chore: one(chores, {
+    fields: [choreAssignees.choreId],
+    references: [chores.id],
+  }),
+  familyMember: one(familyMembers, {
+    fields: [choreAssignees.familyMemberId],
+    references: [familyMembers.id],
+  }),
 }))
 
 // ============================================================================
@@ -254,6 +283,9 @@ export type NewCategory = typeof categories.$inferInsert
 
 export type Chore = typeof chores.$inferSelect
 export type NewChore = typeof chores.$inferInsert
+
+export type ChoreAssignee = typeof choreAssignees.$inferSelect
+export type NewChoreAssignee = typeof choreAssignees.$inferInsert
 
 export type ChoreCompletion = typeof choreCompletions.$inferSelect
 export type NewChoreCompletion = typeof choreCompletions.$inferInsert

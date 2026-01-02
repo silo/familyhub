@@ -35,7 +35,9 @@ const myChores = computed(() => {
   if (!choresResponse.value || !('data' in choresResponse.value) || !user.value) {
     return []
   }
-  return choresResponse.value.data?.filter(chore => chore.assigneeId === user.value?.id) || []
+  return choresResponse.value.data?.filter(chore => 
+    chore.assignees?.some((a: { familyMemberId: number }) => a.familyMemberId === user.value?.id)
+  ) || []
 })
 
 // Open chores (unassigned - anyone can complete)
@@ -43,7 +45,7 @@ const openChores = computed(() => {
   if (!choresResponse.value || !('data' in choresResponse.value)) {
     return []
   }
-  return choresResponse.value.data?.filter(chore => !chore.assigneeId) || []
+  return choresResponse.value.data?.filter(chore => !chore.assignees || chore.assignees.length === 0) || []
 })
 
 // Complete a chore manually

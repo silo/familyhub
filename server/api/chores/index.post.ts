@@ -2,7 +2,7 @@
 import { z } from 'zod'
 import crypto from 'crypto'
 import { db } from '../../db'
-import { chores } from '../../db/schema'
+import { chores, choreAssignees } from '../../db/schema'
 
 const recurringConfigSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('daily') }),
@@ -17,7 +17,7 @@ const createSchema = z.object({
   description: z.string().max(1000).nullable().optional(),
   points: z.coerce.number().int().min(0).default(0),
   categoryId: z.coerce.number().int().positive().nullable().optional(),
-  assigneeId: z.coerce.number().int().positive().nullable().optional(),
+  assigneeIds: z.array(z.coerce.number().int().positive()).default([]),
   isPermanent: z.boolean().default(false),
   recurringType: z.enum(['daily', 'weekly', 'biweekly', 'custom']).nullable().optional(),
   recurringConfig: recurringConfigSchema.nullable().optional(),
@@ -51,7 +51,6 @@ export default defineEventHandler(async (event) => {
         description: data.description || null,
         points: data.points,
         categoryId: data.categoryId || null,
-        assigneeId: data.assigneeId || null,
         isPermanent: data.isPermanent,
         recurringType: data.recurringType || null,
         recurringConfig: data.recurringConfig || null,
@@ -63,6 +62,16 @@ export default defineEventHandler(async (event) => {
         qrToken,
       })
       .returning()
+
+    // Insert assignees if any
+    if (data.assigneeIds.length > 0) {
+      await db.insert(choreAssignees).values(
+        data.assigneeIds.map((familyMemberId) => ({
+          choreId: newChore.id,
+          familyMemberId,
+        }))
+      )
+    }
 
     return {
       data: newChore,

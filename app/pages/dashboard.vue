@@ -35,7 +35,7 @@ const {
   data: Array<
     Chore & {
       category?: Category | null;
-      assignee?: FamilyMember | null;
+      assignees?: Array<{ familyMemberId: number; familyMember?: FamilyMember | null }>;
       lastCompletion?: ChoreCompletion | null;
     }
   >;
@@ -51,6 +51,16 @@ const isLoading = computed(
 const chores = computed(() => choresData.value?.data || []);
 const familyMembers = computed(() => membersData.value?.data || []);
 
+// Helper to check if a chore is assigned to a specific member
+function isAssignedToMember(chore: { assignees?: Array<{ familyMemberId: number }> }, memberId: number): boolean {
+  return chore.assignees?.some(a => a.familyMemberId === memberId) || false;
+}
+
+// Helper to check if chore has any assignees
+function hasAssignees(chore: { assignees?: Array<unknown> }): boolean {
+  return (chore.assignees?.length ?? 0) > 0;
+}
+
 // Filter chores
 const filteredChores = computed(() => {
   let result = chores.value;
@@ -61,7 +71,7 @@ const filteredChores = computed(() => {
   // Filter by assignee if selected
   if (selectedMemberId.value !== null) {
     result = result.filter(
-      (c) => c.assigneeId === selectedMemberId.value || c.assigneeId === null
+      (c) => isAssignedToMember(c, selectedMemberId.value!) || !hasAssignees(c)
     );
   }
 
@@ -72,16 +82,10 @@ const filteredChores = computed(() => {
   result.sort((a, b) => {
     // Assigned to selected member first
     if (selectedMemberId.value !== null) {
-      if (
-        a.assigneeId === selectedMemberId.value &&
-        b.assigneeId !== selectedMemberId.value
-      )
-        return -1;
-      if (
-        b.assigneeId === selectedMemberId.value &&
-        a.assigneeId !== selectedMemberId.value
-      )
-        return 1;
+      const aAssigned = isAssignedToMember(a, selectedMemberId.value);
+      const bAssigned = isAssignedToMember(b, selectedMemberId.value);
+      if (aAssigned && !bAssigned) return -1;
+      if (bAssigned && !aAssigned) return 1;
     }
     // Then by points (highest first)
     return b.points - a.points;
@@ -98,13 +102,13 @@ function getCooldownForChore(
 }
 
 // Handle chore completion
-async function handleComplete(chore: Chore & { category?: Category | null }) {
-  if (chore.assigneeId) {
-    // Assigned chore - complete directly
-    await completeChore(chore.id, chore.assigneeId);
+async function handleComplete(chore: Chore & { category?: Category | null; assignees?: Array<{ familyMemberId: number }> }) {
+  // If chore has exactly one assignee, complete directly
+  if (chore.assignees && chore.assignees.length === 1) {
+    await completeChore(chore.id, chore.assignees[0].familyMemberId);
     await refreshChores();
   } else {
-    // Unassigned - show modal to ask who completed it
+    // Multiple assignees or unassigned - show modal to ask who completed it
     choreToComplete.value = chore;
     whoCompletedModal.value = true;
   }

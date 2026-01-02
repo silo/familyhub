@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import type { Chore, FamilyMember, Category } from '~/types'
 
+interface ChoreAssignee {
+  familyMemberId: number
+  familyMember?: FamilyMember | null
+}
+
 interface Props {
   chore: Chore & {
     category?: Category | null
-    assignee?: FamilyMember | null
+    assignees?: ChoreAssignee[]
   }
   isOverdue?: boolean
   onCooldown?: boolean
@@ -25,6 +30,11 @@ const emit = defineEmits<{
 function getDiceBearUrl(seed: string) {
   return `https://api.dicebear.com/7.x/personas/svg?seed=${encodeURIComponent(seed)}`
 }
+
+// Get assignees with their family member info
+const assignees = computed(() => {
+  return props.chore.assignees?.map(a => a.familyMember).filter(Boolean) as FamilyMember[] || []
+})
 
 // Format cooldown time remaining
 const cooldownText = computed(() => {
@@ -52,6 +62,12 @@ const choreTypeBadge = computed(() => {
   }
   return null
 })
+
+// Assignee names display
+const assigneeNames = computed(() => {
+  if (assignees.value.length === 0) return 'Anyone'
+  return assignees.value.map(a => a.name).join(', ')
+})
 </script>
 
 <template>
@@ -63,26 +79,56 @@ const choreTypeBadge = computed(() => {
     }"
   >
     <div class="flex items-start gap-4">
-      <!-- Assignee Avatar or Anyone Icon -->
+      <!-- Assignee Avatar(s) or Anyone Icon -->
       <div class="flex-shrink-0">
+        <!-- Multiple assignees: stacked avatars -->
+        <div v-if="assignees.length > 1" class="flex -space-x-2">
+          <div
+            v-for="(assignee, index) in assignees.slice(0, 3)"
+            :key="assignee.id"
+            class="size-10 overflow-hidden rounded-full ring-2 ring-white dark:ring-gray-900"
+            :style="{ zIndex: 3 - index }"
+          >
+            <img
+              v-if="assignee.avatarType === 'dicebear'"
+              :src="getDiceBearUrl(assignee.avatarValue)"
+              :alt="assignee.name"
+              class="size-full object-cover"
+            />
+            <img
+              v-else
+              :src="assignee.avatarValue"
+              :alt="assignee.name"
+              class="size-full object-cover"
+            />
+          </div>
+          <div
+            v-if="assignees.length > 3"
+            class="flex size-10 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 ring-2 ring-white dark:ring-gray-900 text-xs font-medium"
+          >
+            +{{ assignees.length - 3 }}
+          </div>
+        </div>
+        <!-- Single assignee -->
         <div
-          v-if="chore.assignee"
+          v-else-if="assignees.length === 1"
           class="size-12 overflow-hidden rounded-full ring-2"
-          :style="{ '--tw-ring-color': chore.assignee.color }"
+          :style="{ '--tw-ring-color': assignees[0].color }"
         >
           <img
-            v-if="chore.assignee.avatarType === 'dicebear'"
-            :src="getDiceBearUrl(chore.assignee.avatarValue)"
-            :alt="chore.assignee.name"
+            v-if="assignees[0].avatarType === 'dicebear'"
+            :src="getDiceBearUrl(assignees[0].avatarValue)"
+            :alt="assignees[0].name"
             class="size-full object-cover"
           />
           <img
             v-else
-            :src="chore.assignee.avatarValue"
-            :alt="chore.assignee.name"
+            :src="assignees[0].avatarValue"
+            :alt="assignees[0].name"
             class="size-full object-cover"
           />
         </div>
+        <!-- No assignees (Anyone) -->
         <div
           v-else
           class="flex size-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800"
@@ -148,7 +194,7 @@ const choreTypeBadge = computed(() => {
 
           <!-- Assignee Name -->
           <span class="text-gray-500">
-            {{ chore.assignee?.name || 'Anyone' }}
+            {{ assigneeNames }}
           </span>
         </div>
       </div>

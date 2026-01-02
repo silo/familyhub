@@ -33,15 +33,14 @@ const categoryOptions = computed(() => [
   ...allCategories.value.map((c: Category) => ({ label: c.name, value: c.id })),
 ])
 
-const memberOptions = computed(() => [
-  { label: 'Anyone', value: null },
-  ...allMembers.value.map((m: FamilyMember) => ({ label: m.name, value: m.id })),
-])
+const memberOptions = computed(() => 
+  allMembers.value.map((m: FamilyMember) => ({ label: m.name, value: m.id }))
+)
 
 // Modal state
 const isModalOpen = ref(false)
 const editingChore = ref<
-  (Chore & { category?: Category | null; assignee?: FamilyMember | null }) | null
+  (Chore & { category?: Category | null; assignees?: Array<{ familyMember?: FamilyMember | null }> }) | null
 >(null)
 const isDeleteModalOpen = ref(false)
 const deletingChore = ref<Chore | null>(null)
@@ -61,7 +60,7 @@ const form = reactive({
   description: '',
   points: 0,
   categoryId: null as number | null,
-  assigneeId: null as number | null,
+  assigneeIds: [] as number[],
   isPermanent: false,
   recurringType: null as string | null,
   dueDate: '',
@@ -107,7 +106,7 @@ function resetForm() {
   form.description = ''
   form.points = 0
   form.categoryId = null
-  form.assigneeId = null
+  form.assigneeIds = []
   form.isPermanent = false
   form.recurringType = null
   form.dueDate = ''
@@ -131,7 +130,7 @@ function openEdit(chore: (typeof allChores.value)[0]) {
   form.description = chore.description || ''
   form.points = chore.points
   form.categoryId = chore.categoryId
-  form.assigneeId = chore.assigneeId
+  form.assigneeIds = chore.assignees?.map((a: { familyMemberId: number }) => a.familyMemberId) || []
   form.isPermanent = chore.isPermanent
   form.recurringType = chore.recurringType
   form.dueDate = chore.dueDate || ''
@@ -185,7 +184,7 @@ async function handleSave() {
     description: form.description || null,
     points: form.points,
     categoryId: form.categoryId,
-    assigneeId: form.assigneeId,
+    assigneeIds: form.assigneeIds,
     isPermanent: form.isPermanent,
     recurringType: form.recurringType,
     recurringConfig,
@@ -485,9 +484,9 @@ async function unbindNfcTag() {
                 <UIcon :name="chore.category.icon || 'i-lucide-folder'" class="size-3" />
                 {{ chore.category.name }}
               </span>
-              <span v-if="chore.assignee" class="flex items-center gap-1">
+              <span v-if="chore.assignees && chore.assignees.length > 0" class="flex items-center gap-1">
                 <UIcon name="i-lucide-user" class="size-3" />
-                {{ chore.assignee.name }}
+                {{ chore.assignees.map((a: { familyMember?: { name: string } | null }) => a.familyMember?.name).filter(Boolean).join(', ') }}
               </span>
               <span v-else class="flex items-center gap-1">
                 <UIcon name="i-lucide-users" class="size-3" />
@@ -593,9 +592,15 @@ async function unbindNfcTag() {
                 <USelect v-model="form.categoryId" :items="categoryOptions" />
               </UFormField>
 
-              <!-- Assignee -->
-              <UFormField label="Assigned To" name="assigneeId">
-                <USelect v-model="form.assigneeId" :items="memberOptions" />
+              <!-- Assignees -->
+              <UFormField label="Assigned To" name="assigneeIds" hint="Leave empty for anyone">
+                <USelectMenu
+                  v-model="form.assigneeIds"
+                  :items="memberOptions"
+                  multiple
+                  value-key="value"
+                  placeholder="Anyone can complete"
+                />
               </UFormField>
             </div>
 
