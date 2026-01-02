@@ -16,6 +16,9 @@ FROM base AS builder
 # Increase Node.js memory limit for build
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 
+# Provide dummy DATABASE_URL for build (prerendering needs it, actual URL set at runtime)
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN pnpm build
