@@ -1,6 +1,7 @@
 {
   "name": "familyhub",
   "type": "module",
+  "version": "1.0.2",
   "private": true,
   "scripts": {
     "build": "nuxt build",
@@ -28,7 +29,11 @@
     "cap:run:ios": "cap run ios",
     "cap:run:android": "cap run android",
     "ios": "nuxt build && cap sync ios && cap open ios",
-    "android": "nuxt build && cap sync android && cap open android"
+    "android": "nuxt build && cap sync android && cap open android",
+    "release": "./scripts/release.sh",
+    "release:patch": "./scripts/release.sh patch",
+    "release:minor": "./scripts/release.sh minor",
+    "release:major": "./scripts/release.sh major"
   },
   "dependencies": {
     "@capacitor/barcode-scanner": "^3.0.0",
