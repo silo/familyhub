@@ -29,6 +29,16 @@ interface PointTransaction {
   createdAt: string
 }
 
+// Time period filter
+const selectedPeriod = ref<'all' | 'month' | 'week' | 'today'>('all')
+
+const periodOptions = [
+  { label: 'All Time', value: 'all' },
+  { label: 'This Month', value: 'month' },
+  { label: 'This Week', value: 'week' },
+  { label: 'Today', value: 'today' },
+]
+
 // Fetch settings for currency info
 const { data: settingsData } = await useFetch<{
   data: { currency: string; pointValue: string }
@@ -36,12 +46,14 @@ const { data: settingsData } = await useFetch<{
 const currency = computed(() => settingsData.value?.data?.currency || 'USD')
 const pointValue = computed(() => parseFloat(settingsData.value?.data?.pointValue || '1.00'))
 
-// Fetch leaderboard data
+// Fetch leaderboard data with period filter
 const {
   data: leaderboardData,
   status,
   refresh: refreshLeaderboard,
-} = await useFetch<{ data: LeaderboardMember[] }>('/api/points/leaderboard')
+} = await useFetch<{ data: LeaderboardMember[] }>(() => `/api/points/leaderboard?period=${selectedPeriod.value}`, {
+  watch: [selectedPeriod],
+})
 
 const leaderboard = computed(() => leaderboardData.value?.data || [])
 
@@ -209,15 +221,29 @@ function getRankClass(index: number) {
     <!-- Header -->
     <template #header>
       <header class="bg-white dark:bg-gray-800 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 py-4">
-          <div class="flex items-center justify-between">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Points Leaderboard</h1>
+        <div class="max-w-7xl mx-auto px-4 py-3">
+          <div class="flex items-center justify-between gap-4">
+            <!-- Period filter (left) -->
+            <div class="flex-1">
+              <UFieldGroup size="sm">
+                <UButton
+                  v-for="option in periodOptions"
+                  :key="option.value"
+                  :color="selectedPeriod === option.value ? 'primary' : 'neutral'"
+                  :variant="selectedPeriod === option.value ? 'solid' : 'ghost'"
+                  @click="selectedPeriod = option.value as typeof selectedPeriod"
+                >
+                  {{ option.label }}
+                </UButton>
+              </UFieldGroup>
+            </div>
 
+            <!-- Settings (right) -->
             <UButton
               to="/settings"
               variant="ghost"
               color="neutral"
-              icon="i-heroicons-cog-6-tooth"
+              icon="i-lucide-settings"
               size="sm"
             />
           </div>

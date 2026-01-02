@@ -129,26 +129,31 @@ async function handleMemberSelected(memberId: number) {
     <!-- Header -->
     <template #header>
       <header class="bg-white dark:bg-gray-800 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 py-4">
-          <div class="flex items-center justify-between">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-              Chores
-            </h1>
+        <div class="max-w-7xl mx-auto px-4 py-3">
+          <div class="flex items-center justify-between gap-4">
+            <!-- Family member filter (left) -->
+            <div class="flex-1 min-w-0">
+              <FamilyMemberFilter
+                v-model="selectedMemberId"
+                :members="familyMembers"
+              />
+            </div>
 
-            <div class="flex items-center gap-3">
+            <!-- Icons (right) -->
+            <div class="flex items-center gap-2 flex-shrink-0">
               <!-- View toggle -->
               <UFieldGroup>
                 <UButton
                   :color="viewMode === 'card' ? 'primary' : 'neutral'"
                   :variant="viewMode === 'card' ? 'solid' : 'ghost'"
-                  icon="i-heroicons-squares-2x2"
+                  icon="i-lucide-layout-grid"
                   size="sm"
                   @click="viewMode = 'card'"
                 />
                 <UButton
                   :color="viewMode === 'list' ? 'primary' : 'neutral'"
                   :variant="viewMode === 'list' ? 'solid' : 'ghost'"
-                  icon="i-heroicons-list-bullet"
+                  icon="i-lucide-list"
                   size="sm"
                   @click="viewMode = 'list'"
                 />
@@ -159,25 +164,13 @@ async function handleMemberSelected(memberId: number) {
                 to="/settings"
                 variant="ghost"
                 color="neutral"
-                icon="i-heroicons-cog-6-tooth"
+                icon="i-lucide-settings"
                 size="sm"
               />
             </div>
           </div>
         </div>
       </header>
-
-      <!-- Family member filter -->
-      <div
-        class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
-      >
-        <div class="max-w-7xl mx-auto px-4 py-3">
-          <FamilyMemberFilter
-            v-model="selectedMemberId"
-            :members="familyMembers"
-          />
-        </div>
-      </div>
     </template>
 
     <!-- Main content -->
