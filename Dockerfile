@@ -12,6 +12,10 @@ RUN pnpm install --frozen-lockfile
 
 # Build stage
 FROM base AS builder
+
+# Increase Node.js memory limit for build
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN pnpm build

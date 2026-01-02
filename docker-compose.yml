@@ -5,12 +5,10 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: familyhub
-      POSTGRES_PASSWORD: familyhub_password
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
       POSTGRES_DB: familyhub
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U familyhub -d familyhub"]
       interval: 10s
@@ -19,12 +17,12 @@ services:
 
   app:
     build:
-      context: .
+      context: https://github.com/silo/familyhub.git
       dockerfile: Dockerfile
     container_name: familyhub-app
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://familyhub:familyhub_password@db:5432/familyhub
+      DATABASE_URL: postgresql://familyhub:${DB_PASSWORD:-changeme}@db:5432/familyhub
       NODE_ENV: production
     ports:
       - "3000:3000"
