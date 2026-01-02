@@ -31,6 +31,14 @@ function getDiceBearUrl(seed: string) {
   return `https://api.dicebear.com/7.x/personas/svg?seed=${encodeURIComponent(seed)}`
 }
 
+// Get avatar URL for a family member
+function getAvatarUrl(member: FamilyMember) {
+  if (member.avatarType === 'dicebear') {
+    return getDiceBearUrl(member.avatarValue)
+  }
+  return member.avatarValue
+}
+
 // Get assignees with their family member info
 const assignees = computed(() => {
   return props.chore.assignees?.map(a => a.familyMember).filter(Boolean) as FamilyMember[] || []
@@ -72,138 +80,99 @@ const assigneeNames = computed(() => {
 
 <template>
   <UCard
-    class="transition-all"
     :class="{
       'border-l-4 border-l-red-500': isOverdue,
       'opacity-60': onCooldown,
     }"
   >
-    <div class="flex items-start gap-4">
-      <!-- Assignee Avatar(s) or Anyone Icon -->
-      <div class="flex-shrink-0">
-        <!-- Multiple assignees: stacked avatars -->
-        <div v-if="assignees.length > 1" class="flex -space-x-2">
-          <div
-            v-for="(assignee, index) in assignees.slice(0, 3)"
-            :key="assignee.id"
-            class="size-10 overflow-hidden rounded-full ring-2 ring-white dark:ring-gray-900"
-            :style="{ zIndex: 3 - index }"
-          >
-            <img
-              v-if="assignee.avatarType === 'dicebear'"
-              :src="getDiceBearUrl(assignee.avatarValue)"
+    <div class="flex flex-col gap-3">
+      <!-- Top row: Avatar and Content -->
+      <div class="flex items-start gap-4">
+        <!-- Assignee Avatar(s) or Anyone Icon -->
+        <div class="flex-shrink-0">
+          <!-- Multiple assignees: use AvatarGroup -->
+          <UAvatarGroup v-if="assignees.length > 0" size="lg" :max="3">
+            <UAvatar
+              v-for="assignee in assignees"
+              :key="assignee.id"
+              :src="getAvatarUrl(assignee)"
               :alt="assignee.name"
-              class="size-full object-cover"
             />
-            <img
-              v-else
-              :src="assignee.avatarValue"
-              :alt="assignee.name"
-              class="size-full object-cover"
-            />
-          </div>
-          <div
-            v-if="assignees.length > 3"
-            class="flex size-10 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 ring-2 ring-white dark:ring-gray-900 text-xs font-medium"
-          >
-            +{{ assignees.length - 3 }}
-          </div>
-        </div>
-        <!-- Single assignee -->
-        <div
-          v-else-if="assignees.length === 1"
-          class="size-12 overflow-hidden rounded-full ring-2"
-          :style="{ '--tw-ring-color': assignees[0].color }"
-        >
-          <img
-            v-if="assignees[0].avatarType === 'dicebear'"
-            :src="getDiceBearUrl(assignees[0].avatarValue)"
-            :alt="assignees[0].name"
-            class="size-full object-cover"
-          />
-          <img
+          </UAvatarGroup>
+          <!-- No assignees (Anyone) -->
+          <UAvatar
             v-else
-            :src="assignees[0].avatarValue"
-            :alt="assignees[0].name"
-            class="size-full object-cover"
+            size="lg"
+            icon="i-lucide-users"
           />
         </div>
-        <!-- No assignees (Anyone) -->
-        <div
-          v-else
-          class="flex size-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800"
-        >
-          <UIcon name="i-lucide-users" class="size-6 text-gray-400" />
-        </div>
-      </div>
 
-      <!-- Content -->
-      <div class="min-w-0 flex-1">
-        <div class="flex items-start justify-between gap-2">
-          <div>
-            <h3 class="font-semibold text-gray-900 dark:text-white">
-              {{ chore.title }}
-            </h3>
-            <p v-if="chore.description" class="mt-1 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-              {{ chore.description }}
-            </p>
-          </div>
+        <!-- Content -->
+        <div class="min-w-0 flex-1">
+          <h3 class="font-semibold text-gray-900 dark:text-white">
+            {{ chore.title }}
+          </h3>
+          <p v-if="chore.description" class="mt-1 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+            {{ chore.description }}
+          </p>
 
-          <!-- Points Badge -->
-          <div v-if="chore.points > 0" class="flex-shrink-0">
-            <UBadge color="warning" variant="solid" size="lg">
-              <UIcon name="i-lucide-coins" class="mr-1 size-3" />
-              {{ chore.points }}
+          <!-- Meta Info -->
+          <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+            <!-- Category -->
+            <UBadge
+              v-if="chore.category"
+              variant="subtle"
+              color="neutral"
+            >
+              <UIcon :name="chore.category.icon || 'i-lucide-folder'" class="mr-1 size-3" />
+              {{ chore.category.name }}
             </UBadge>
+
+            <!-- Type Badge -->
+            <UBadge
+              v-if="choreTypeBadge"
+              :color="choreTypeBadge.color"
+              variant="subtle"
+              size="xs"
+            >
+              {{ choreTypeBadge.label }}
+            </UBadge>
+
+            <!-- Overdue -->
+            <UBadge v-if="isOverdue" color="error" variant="subtle" size="xs">
+              <UIcon name="i-lucide-alert-circle" class="mr-1 size-3" />
+              Overdue
+            </UBadge>
+
+            <!-- Cooldown -->
+            <UBadge v-if="onCooldown" color="neutral" variant="subtle" size="xs">
+              <UIcon name="i-lucide-clock" class="mr-1 size-3" />
+              {{ cooldownText }}
+            </UBadge>
+
+            <!-- Assignee Name -->
+            <span class="text-gray-500">
+              {{ assigneeNames }}
+            </span>
           </div>
-        </div>
-
-        <!-- Meta Info -->
-        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
-          <!-- Category -->
-          <span
-            v-if="chore.category"
-            class="inline-flex items-center gap-1 rounded-full px-2 py-0.5"
-            :style="{ backgroundColor: (chore.category.color || '#888888') + '20', color: chore.category.color || '#888888' }"
-          >
-            <UIcon :name="chore.category.icon || 'i-heroicons-folder'" class="size-3" />
-            {{ chore.category.name }}
-          </span>
-
-          <!-- Type Badge -->
-          <UBadge
-            v-if="choreTypeBadge"
-            :color="choreTypeBadge.color"
-            variant="subtle"
-            size="xs"
-          >
-            {{ choreTypeBadge.label }}
-          </UBadge>
-
-          <!-- Overdue -->
-          <UBadge v-if="isOverdue" color="error" variant="subtle" size="xs">
-            <UIcon name="i-lucide-alert-circle" class="mr-1 size-3" />
-            Overdue
-          </UBadge>
-
-          <!-- Cooldown -->
-          <UBadge v-if="onCooldown" color="neutral" variant="subtle" size="xs">
-            <UIcon name="i-lucide-clock" class="mr-1 size-3" />
-            {{ cooldownText }}
-          </UBadge>
-
-          <!-- Assignee Name -->
-          <span class="text-gray-500">
-            {{ assigneeNames }}
-          </span>
         </div>
       </div>
 
-      <!-- Complete Button -->
-      <div class="flex-shrink-0">
+      <!-- Bottom row: Points and Done button -->
+      <div class="flex items-center justify-between pt-2">
+        <!-- Points Badge -->
+        <div>
+          <UBadge v-if="chore.points > 0" color="warning" variant="solid" size="lg">
+            <UIcon name="i-lucide-coins" class="mr-1 size-3" />
+            {{ chore.points }} pts
+          </UBadge>
+        </div>
+
+        <!-- Complete Button -->
         <UButton
           icon="i-lucide-check"
           color="primary"
+          size="lg"
           :disabled="onCooldown"
           @click="emit('complete', chore)"
         >

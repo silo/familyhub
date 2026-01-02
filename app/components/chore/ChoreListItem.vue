@@ -29,6 +29,14 @@ function getDiceBearUrl(seed: string) {
   return `https://api.dicebear.com/7.x/personas/svg?seed=${encodeURIComponent(seed)}`
 }
 
+// Get avatar URL for a family member
+function getAvatarUrl(member: FamilyMember) {
+  if (member.avatarType === 'dicebear') {
+    return getDiceBearUrl(member.avatarValue)
+  }
+  return member.avatarValue
+}
+
 // Get assignees with their family member info
 const assignees = computed(() => {
   return props.chore.assignees?.map(a => a.familyMember).filter(Boolean) as FamilyMember[] || []
@@ -36,96 +44,68 @@ const assignees = computed(() => {
 </script>
 
 <template>
-  <div
-    class="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-750"
+  <UCard
+    :ui="{ body: 'p-3' }"
     :class="{
       'border-l-4 border-l-red-500': isOverdue,
       'opacity-60': onCooldown,
     }"
   >
-    <!-- Assignee Avatar(s) -->
-    <div class="flex-shrink-0">
-      <!-- Multiple assignees: stacked avatars -->
-      <div v-if="assignees.length > 1" class="flex -space-x-1">
-        <div
-          v-for="(assignee, index) in assignees.slice(0, 2)"
-          :key="assignee.id"
-          class="size-7 overflow-hidden rounded-full ring-1 ring-white dark:ring-gray-900"
-          :style="{ zIndex: 2 - index }"
-        >
-          <img
-            v-if="assignee.avatarType === 'dicebear'"
-            :src="getDiceBearUrl(assignee.avatarValue)"
+    <div class="flex items-center gap-3">
+      <!-- Assignee Avatar(s) -->
+      <div class="flex-shrink-0">
+        <!-- Multiple assignees: use AvatarGroup -->
+        <UAvatarGroup v-if="assignees.length > 0" size="sm" :max="2">
+          <UAvatar
+            v-for="assignee in assignees"
+            :key="assignee.id"
+            :src="getAvatarUrl(assignee)"
             :alt="assignee.name"
-            class="size-full object-cover"
           />
-          <img
-            v-else
-            :src="assignee.avatarValue"
-            :alt="assignee.name"
-            class="size-full object-cover"
-          />
-        </div>
-        <div
-          v-if="assignees.length > 2"
-          class="flex size-7 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 ring-1 ring-white dark:ring-gray-900 text-xs font-medium"
-        >
-          +{{ assignees.length - 2 }}
-        </div>
-      </div>
-      <!-- Single assignee -->
-      <div
-        v-else-if="assignees.length === 1"
-        class="size-8 overflow-hidden rounded-full ring-2"
-        :style="{ '--tw-ring-color': assignees[0].color }"
-      >
-        <img
-          v-if="assignees[0].avatarType === 'dicebear'"
-          :src="getDiceBearUrl(assignees[0].avatarValue)"
-          :alt="assignees[0].name"
-          class="size-full object-cover"
+        </UAvatarGroup>
+        <!-- No assignees (Anyone) -->
+        <UAvatar
+          v-else
+          size="sm"
+          icon="i-lucide-users"
         />
       </div>
-      <!-- No assignees (Anyone) -->
-      <div
-        v-else
-        class="flex size-8 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700"
-      >
-        <UIcon name="i-lucide-users" class="size-4 text-gray-400" />
+
+      <!-- Title -->
+      <div class="min-w-0 flex-1">
+        <span class="font-medium text-gray-900 dark:text-white">
+          {{ chore.title }}
+        </span>
       </div>
-    </div>
 
-    <!-- Title -->
-    <div class="min-w-0 flex-1">
-      <span class="font-medium text-gray-900 dark:text-white">
-        {{ chore.title }}
-      </span>
-    </div>
-
-    <!-- Category -->
-    <div v-if="chore.category" class="flex-shrink-0">
-      <div
-        class="flex size-6 items-center justify-center rounded"
-        :style="{ backgroundColor: chore.category.color || '#888888' }"
+      <!-- Category -->
+      <UBadge
+        v-if="chore.category"
+        variant="subtle"
+        color="neutral"
+        size="xs"
       >
-        <UIcon :name="chore.category.icon || 'i-heroicons-folder'" class="size-4 text-white" />
-      </div>
+        <UIcon :name="chore.category.icon || 'i-lucide-folder'" class="mr-1 size-3" />
+        {{ chore.category.name }}
+      </UBadge>
+
+      <!-- Points -->
+      <UBadge v-if="chore.points > 0" color="warning" variant="subtle" size="xs">
+        {{ chore.points }} pts
+      </UBadge>
+
+      <!-- Overdue Badge -->
+      <UBadge v-if="isOverdue" color="error" variant="subtle" size="xs">
+        Overdue
+      </UBadge>
+
+      <!-- Complete Button -->
+      <UButton
+        icon="i-lucide-check"
+        size="xs"
+        :disabled="onCooldown"
+        @click="emit('complete', chore)"
+      />
     </div>
-
-    <!-- Points -->
-    <div v-if="chore.points > 0" class="flex-shrink-0">
-      <UBadge color="warning" variant="subtle" size="xs"> {{ chore.points }} pts </UBadge>
-    </div>
-
-    <!-- Overdue Badge -->
-    <UBadge v-if="isOverdue" color="error" variant="subtle" size="xs"> Overdue </UBadge>
-
-    <!-- Complete Button -->
-    <UButton
-      icon="i-lucide-check"
-      size="xs"
-      :disabled="onCooldown"
-      @click="emit('complete', chore)"
-    />
-  </div>
+  </UCard>
 </template>
