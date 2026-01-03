@@ -28,6 +28,24 @@ export const settings = pgTable('settings', {
   neutralColor: varchar('neutral_color', { length: 20 }).notNull().default('slate'),
   radius: decimal('radius', { precision: 4, scale: 3 }).notNull().default('0.25'),
   colorMode: varchar('color_mode', { length: 10 }).notNull().default('system'),
+  // Screensaver settings
+  screensaverEnabled: boolean('screensaver_enabled').notNull().default(false),
+  screensaverTimeout: integer('screensaver_timeout').notNull().default(300), // seconds until activation
+  screensaverInterval: integer('screensaver_interval').notNull().default(30), // seconds between image changes
+  screensaverTimezone: varchar('screensaver_timezone', { length: 50 }).notNull().default('UTC'),
+  screensaverClockFormat: varchar('screensaver_clock_format', { length: 10 }).notNull().default('auto'), // '12h', '24h', 'auto'
+  screensaverCategory: varchar('screensaver_category', { length: 30 }).notNull().default('nature'), // unsplash category
+  screensaverTransition: varchar('screensaver_transition', { length: 10 }).notNull().default('fade'), // 'fade', 'slide', 'zoom'
+  screensaverImageSource: varchar('screensaver_image_source', { length: 20 }).notNull().default('picsum'), // 'unsplash', 'picsum'
+  screensaverDimEnabled: boolean('screensaver_dim_enabled').notNull().default(false),
+  screensaverDimStart: time('screensaver_dim_start').default('23:00:00'), // night mode start
+  screensaverDimEnd: time('screensaver_dim_end').default('06:00:00'), // night mode end
+  screensaverDimOpacity: integer('screensaver_dim_opacity').notNull().default(70), // 0-100 dim percentage
+  // API keys
+  unsplashApiKey: varchar('unsplash_api_key', { length: 100 }),
+  weatherApiKey: varchar('weather_api_key', { length: 100 }),
+  weatherLocation: varchar('weather_location', { length: 100 }),
+  weatherUnits: varchar('weather_units', { length: 10 }).notNull().default('metric'), // 'metric', 'imperial'
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

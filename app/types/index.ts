@@ -44,6 +44,24 @@ export interface Settings {
   neutralColor: string
   radius: string
   colorMode: 'light' | 'dark' | 'system'
+  // Screensaver settings
+  screensaverEnabled: boolean
+  screensaverTimeout: number
+  screensaverInterval: number
+  screensaverTimezone: string
+  screensaverClockFormat: 'auto' | '12h' | '24h'
+  screensaverCategory: string
+  screensaverTransition: 'fade' | 'slide' | 'zoom'
+  screensaverImageSource: 'unsplash' | 'picsum'
+  screensaverDimEnabled: boolean
+  screensaverDimStart: string | null
+  screensaverDimEnd: string | null
+  screensaverDimOpacity: number
+  // API keys
+  unsplashApiKey?: string | null
+  weatherApiKey?: string | null
+  weatherLocation?: string | null
+  weatherUnits: 'metric' | 'imperial'
   createdAt: Date
   updatedAt: Date
 }
@@ -55,10 +73,22 @@ export {
   RADIUS_VALUES,
   COLOR_MODES,
   DEFAULT_THEME,
+  SCREENSAVER_CLOCK_FORMATS,
+  SCREENSAVER_CATEGORIES,
+  SCREENSAVER_TRANSITIONS,
+  WEATHER_UNITS,
+  IMAGE_SOURCES,
+  DEFAULT_SCREENSAVER,
+  COMMON_TIMEZONES,
   type PrimaryColor,
   type NeutralColor,
   type RadiusValue,
   type ColorMode,
+  type ScreensaverClockFormat,
+  type ScreensaverCategory,
+  type ScreensaverTransition,
+  type WeatherUnits,
+  type ImageSource,
 } from '~~/shared/theme'
 
 export interface FamilyMember {

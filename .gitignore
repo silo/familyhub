@@ -25,4 +25,4 @@ logs
 
 # Release signing
 android/*.keystore
-FamilyHub-release.apk
+FamilyHub-*

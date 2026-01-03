@@ -1,0 +1,1 @@
+ALTER TABLE "settings" ADD COLUMN "screensaver_image_source" varchar(20) DEFAULT 'picsum' NOT NULL;

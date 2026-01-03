@@ -15,6 +15,20 @@
       "when": 1767353671214,
       "tag": "0001_tearful_zuras",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1767393952015,
+      "tag": "0002_parallel_maginty",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1767398064533,
+      "tag": "0003_pink_electro",
+      "breakpoints": true
     }
   ]
 }

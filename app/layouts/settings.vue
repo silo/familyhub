@@ -66,6 +66,7 @@ const navItems = [
   { label: 'Chores', to: '/settings/chores', icon: 'i-lucide-list-checks' },
   { label: 'Points', to: '/settings/points', icon: 'i-lucide-coins' },
   { label: 'Theme', to: '/settings/theme', icon: 'i-lucide-palette' },
+  { label: 'Screensaver', to: '/settings/screensaver', icon: 'i-lucide-monitor' },
   { label: 'Security', to: '/settings/security', icon: 'i-lucide-shield' },
   { label: 'Backup', to: '/settings/backup', icon: 'i-lucide-download' },
 ]
