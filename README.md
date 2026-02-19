@@ -82,10 +82,13 @@ Managing household chores with kids can be chaotic. FamilyHub brings order to th
 
 ## 📸 Screenshots
 
-<!-- Add screenshots here -->
-| Dashboard | Points | Activity |
-|-----------|--------|----------|
-| ![Dashboard](/.github/screenshots/dashboard.png) | ![Points](/.github/screenshots/points.png) | ![Activity](/.github/screenshots/activity.png) |
+![Screenshot 0](screenshots/familyhub-0.png)
+![Screenshot 1](screenshots/familyhub-1.png)
+![Screenshot 2](screenshots/familyhub-2.png)
+![Screenshot 3](screenshots/familyhub-3.png)
+![Screenshot 4](screenshots/familyhub-4.png)
+![Screenshot 5](screenshots/familyhub-5.png)
+![Screenshot 6](screenshots/familyhub-6.png)
 
 ---
 
